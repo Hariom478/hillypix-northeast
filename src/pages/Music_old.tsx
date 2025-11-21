@@ -1,4 +1,4 @@
-import { useState,useEffect } from 'react';
+import { useState } from 'react';
 import Header from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -15,8 +15,6 @@ import moviePoster3 from '@/assets/movie-poster-3.jpg';
 import moviePoster4 from '@/assets/movie-poster-4.jpg';
 import moviePoster5 from '@/assets/movie-poster-5.jpg';
 import moviePoster6 from '@/assets/movie-poster-6.jpg';
-import Api from "@/api/serverApi";
-
 
 const musicVideos = [
   // Trending (Free - Ad Supported)
@@ -71,43 +69,35 @@ const Music = () => {
   const [selectedState, setSelectedState] = useState('all');
   const { toast } = useToast();
   const isMobile = useIsMobile();
-  const { addToWatchlist, removeFromWatchlist, isInWatchlist } = useWatchlist(71,'music');
-
-
-const [movies, setMovies] = useState([]);
-const [languages, setLanguages] = useState([]);
-const [selectedLanguage, setSelectedLanguage] = useState("All");
-const [selectedGenre, setSelectedGenre] = useState("");
+  const { addToWatchlist, removeFromWatchlist, isInWatchlist } = useWatchlist();
 
   const handleWatchlistToggle = (video: any, e: React.MouseEvent) => {
     e.stopPropagation();
     if (isInWatchlist(video.id)) {
-      removeFromWatchlist(video?.id);
+      removeFromWatchlist(video.id);
       toast({
         title: "Removed from Watchlist",
         description: `${video.title} has been removed from your watchlist.`,
       });
-      fetchData(71,selectedLanguage);
     } else {
       addToWatchlist(video);
       toast({
         title: "Added to Watchlist",
         description: `${video.title} has been added to your watchlist.`,
       });
-      fetchData(71,selectedLanguage);
     }
   };
 
   const handlePlayVideo = (video: any) => {
-    if (video.getpayperwatch==null) {
+    if (video.isFree) {
       toast({
         title: "Playing Music Video",
-        description: `Enjoy ${video?.title} by ${video?.director} (Ad-supported)`,
+        description: `Enjoy ${video.title} by ${video.artist} (Ad-supported)`,
       });
     } else {
       toast({
         title: "Premium Content",
-        description: `Buy ${video?.title} for ₹${video?.getpayperwatch?.amount} to watch without ads.`,
+        description: `Buy ${video.title} for ₹${video.price} to watch without ads.`,
       });
     }
   };
@@ -156,41 +146,6 @@ const [selectedGenre, setSelectedGenre] = useState("");
 
   const filteredVideos = getFilteredVideos();
 
-
-const fetchData = async (lang, user_id) => {
-  const body = {
-    type: "music",
-    user_id: user_id,
-    language: lang && lang !== "All" ? lang : "All", // Default to "All"
-  };
-
-  const res = await Api("/web-home-page", "POST", body, undefined, { cache: "no-store" });
-  const data = await res.json();
-  console.log("Every Time Data Render ", data);
-  return data;
-};
-
-
-useEffect(() => {
-  // Initial fetch
-  fetchData("All", '71').then(data => {
-
-    setMovies(data?.data || []);
-
-    const langs = [...new Set((data?.data || []).map(m => m.language))];
-    setLanguages(["All", ...langs]);
-
-  });
-}, []);
-
-const handleLanguageChange = (lang) => {
-  setSelectedLanguage(lang);
-  fetchData(lang,'71').then(data => {
-    setMovies(data?.data || []);
-  });
-};
-
-
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -217,7 +172,7 @@ const handleLanguageChange = (lang) => {
         </section>
 
         {/* Tabs Navigation */}
-        {/* <section className="py-8 px-6 sticky top-16 bg-background/95 backdrop-blur-md z-40 border-b border-border/20">
+        <section className="py-8 px-6 sticky top-16 bg-background/95 backdrop-blur-md z-40 border-b border-border/20">
           <div className="container mx-auto">
             <Tabs value={selectedTab} onValueChange={setSelectedTab}>
               <TabsList className="grid w-full max-w-lg mx-auto grid-cols-3 bg-card-accent/50">
@@ -236,33 +191,33 @@ const handleLanguageChange = (lang) => {
               </TabsList>
             </Tabs>
           </div>
-        </section> */}
+        </section>
 
         {/* State Filter (shown only in By State tab) */}
-        {/* {selectedTab === 'state' && ( */}
+        {selectedTab === 'state' && (
           <section className="py-6 px-6 bg-card-accent/10">
             <div className="container mx-auto">
               <div className={`${isMobile ? 'grid grid-cols-2 gap-2' : 'flex flex-wrap gap-2 justify-center'}`}>
-                {languages.map((state) => (
+                {states.map((state) => (
                   <Button
-                    key={state}
-                    variant={selectedLanguage == state ? "default" : "outline"}
-                    onClick={() => handleLanguageChange(state)}
-                    className={`${selectedLanguage == state ? 'bg-golden text-black hover:bg-golden/90' : 'border-border/30'} ${isMobile ? 'text-xs px-2 h-auto py-2' : ''}`}
+                    key={state.id}
+                    variant={selectedState === state.id ? "default" : "outline"}
+                    onClick={() => setSelectedState(state.id)}
+                    className={`${selectedState === state.id ? 'bg-golden text-black hover:bg-golden/90' : 'border-border/30'} ${isMobile ? 'text-xs px-2 h-auto py-2' : ''}`}
                   >
-                    {state}
+                    {state.name}
                   </Button>
                 ))}
               </div>
             </div>
           </section>
-        {/* )} */}
+        )}
 
         {/* Music Videos Grid */}
         <section className="py-16 px-6">
           <div className="container mx-auto">
             <div className={`grid ${isMobile ? 'grid-cols-3 gap-2' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'}`}>
-              {movies.map((video) => (
+              {filteredVideos.map((video) => (
                 <Card 
                   key={video.id}
                   className="group bg-card-accent/30 border-border/20 hover:border-golden/30 theatre-transition overflow-hidden"
@@ -271,8 +226,8 @@ const handleLanguageChange = (lang) => {
                     {/* Video Thumbnail */}
                     <div className="relative aspect-video overflow-hidden">
                       <img 
-                        src={video?.app_list_image} 
-                        alt={video?.title}
+                        src={video.poster} 
+                        alt={video.title}
                         className="w-full h-full object-cover group-hover:scale-105 theatre-transition"
                       />
                       
@@ -280,17 +235,17 @@ const handleLanguageChange = (lang) => {
                       {!isMobile && (
                         <div className="absolute top-3 left-3 right-3 flex justify-between items-start">
                           <div className="flex gap-2">
-                            {video?.getpayperwatch==null && (
+                            {video.isFree && (
                               <Badge className="bg-green-600 text-white text-xs">
                                 FREE
                               </Badge>
                             )}
-                            {video?.getpayperwatch && (
+                            {!video.isFree && (
                               <Badge className="bg-golden text-black text-xs font-semibold">
-                                ₹{video?.getpayperwatch?.amount}
+                                ₹{video.price}
                               </Badge>
                             )}
-                            {video?.new_release==1 && (
+                            {video.new && (
                               <Badge className="bg-primary text-primary-foreground text-xs">
                                 NEW
                               </Badge>
@@ -302,10 +257,10 @@ const handleLanguageChange = (lang) => {
                       {/* Mobile: Show only price/free badge */}
                       {isMobile && (
                         <div className="absolute top-1 right-1">
-                          {video.getpayperwatch==null ? (
+                          {video.isFree ? (
                             <Badge className="bg-green-600 text-white text-[10px] px-1 py-0">FREE</Badge>
                           ) : (
-                            <Badge className="bg-golden text-black text-[10px] px-1 py-0">₹{video?.getpayperwatch?.amount}</Badge>
+                            <Badge className="bg-golden text-black text-[10px] px-1 py-0">₹{video.price}</Badge>
                           )}
                         </div>
                       )}
@@ -329,17 +284,17 @@ const handleLanguageChange = (lang) => {
                         // Compact mobile view
                         <>
                           <h3 className="text-[10px] font-semibold text-foreground line-clamp-1 mb-0.5">
-                            {video?.title}
+                            {video.title}
                           </h3>
                           <p className="text-[8px] text-muted-foreground line-clamp-1">
-                            {video?.director}
+                            {video.artist}
                           </p>
                         </>
                       ) : (
                         // Full desktop view
                         <>
-                          <h3 className="font-bold text-foreground mb-1 line-clamp-1">{video?.title}</h3>
-                          <p className="text-sm text-muted-foreground mb-2">{video?.director}</p>
+                          <h3 className="font-bold text-foreground mb-1 line-clamp-1">{video.title}</h3>
+                          <p className="text-sm text-muted-foreground mb-2">{video.artist}</p>
                           
                           <div className="flex items-center justify-between text-xs text-muted-foreground mb-3">
                             <div className="flex items-center gap-3">
@@ -365,7 +320,7 @@ const handleLanguageChange = (lang) => {
                               onClick={() => handlePlayVideo(video)}
                             >
                               <Play className="w-3 h-3 mr-1" />
-                              {video.getpayperwatch ==null ? 'Watch' : 'Buy'}
+                              {video.isFree ? 'Watch' : 'Buy'}
                             </Button>
                             <Button 
                               size="sm" 
@@ -373,7 +328,7 @@ const handleLanguageChange = (lang) => {
                               className="border-golden/30"
                               onClick={(e) => handleWatchlistToggle(video, e)}
                             >
-                              {video?.is_watchlist==1 ? (
+                              {isInWatchlist(video.id) ? (
                                 <BookmarkCheck className="w-3 h-3 text-golden" />
                               ) : (
                                 <BookmarkPlus className="w-3 h-3" />
@@ -388,7 +343,7 @@ const handleLanguageChange = (lang) => {
               ))}
             </div>
 
-            {movies.length === 0 && (
+            {filteredVideos.length === 0 && (
               <div className="text-center py-12">
                 <p className="text-muted-foreground">No music videos found in this category.</p>
               </div>

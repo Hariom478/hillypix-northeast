@@ -1,4 +1,4 @@
-import { useState,useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import { Button } from '@/components/ui/button';
@@ -18,7 +18,6 @@ import moviePoster3 from '@/assets/movie-poster-3.jpg';
 import moviePoster4 from '@/assets/movie-poster-4.jpg';
 import moviePoster5 from '@/assets/movie-poster-5.jpg';
 import moviePoster6 from '@/assets/movie-poster-6.jpg';
-import { getHomePage } from "@/lib/graphql";
 
 const tvSeriesData = [
   {
@@ -168,11 +167,6 @@ const TVSeries = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
 
-  const [lists, setLists] = useState([]);
-  const [selectedListId, setSelectedListId] = useState(null);
-  const [movies, setMovies] = useState([]);
-  const [allMovies, setAllMovies] = useState([]);
-
   const handleWatchlistToggle = (series: any, e: React.MouseEvent) => {
     e.stopPropagation();
     if (isInWatchlist(series.id)) {
@@ -223,55 +217,6 @@ const TVSeries = () => {
   const filteredSeries = selectedTab === 'all' 
     ? tvSeriesData 
     : tvSeriesData.filter(s => s.genre.toLowerCase() === selectedTab);
-
-
-  
-  useEffect(() => {
-    getHomePage(71,'tvSeries').then(data => {
-  
-     const fetchedLists = data?.getHomePage?.data?.list || [];
-
-     console.log("fetchedLists fetchedLists",fetchedLists);
-
-      const filteredLists = fetchedLists.filter(list =>
-        list.listable?.some(item => item?.title)
-      );
-  
-      // Add "All" category at top
-      const listsWithAll = [{ id: "all", name: "All" }, ...filteredLists];
-  
-      setLists(listsWithAll);
-  
-      // Collect all movies from every listable
-      const mergedMovies = fetchedLists.flatMap(list =>
-        list.listable
-          ?.filter(item => item?.title)
-          .map(item => item.title) || []
-      );
-  
-      setAllMovies(mergedMovies);
-      setSelectedListId("all");
-      setMovies(mergedMovies);
-    });
-  }, []);
-
-  const handleGenreChange = (id) => {
-  setSelectedListId(id);
-
-  if (id === "all") {
-    setMovies(allMovies);
-    return;
-  }
-
-  const selectedList = lists.find(l => l.id === id);
-
-  setMovies(
-    selectedList?.listable
-      ?.filter(item => item?.title)
-      ?.map(item => item.title) 
-    || []
-  );
-};
 
   return (
     <div className="min-h-screen bg-background">
@@ -350,26 +295,7 @@ const TVSeries = () => {
         {/* Category Tabs */}
         <section className="py-16 px-6">
           <div className="container mx-auto">
-
-            <Tabs value={selectedListId}  className="mb-8">
-            <TabsList 
-              className={`grid w-full ${isMobile ? 'grid-cols-3' : 'max-w-2xl mx-auto grid-cols-5'} bg-card-accent/50`}
-            >
-              {lists.map((item) => (
-                <TabsTrigger 
-                  key={item.id} 
-                  value={item.id}
-                  className={isMobile ? "text-xs" : ""}
-                   onClick={() => handleGenreChange(item.id)}
-                >
-                  {isMobile && item.name ? item.name : item.name}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
-
-
-            {/* <Tabs value={selectedTab} onValueChange={setSelectedTab} className="mb-8">
+            <Tabs value={selectedTab} onValueChange={setSelectedTab} className="mb-8">
               <TabsList className={`grid w-full ${isMobile ? 'grid-cols-3' : 'max-w-2xl mx-auto grid-cols-5'} bg-card-accent/50`}>
                 <TabsTrigger value="all" className={isMobile ? 'text-xs' : ''}>All</TabsTrigger>
                 <TabsTrigger value="horror" className={isMobile ? 'text-xs' : ''}>Horror</TabsTrigger>
@@ -378,168 +304,145 @@ const TVSeries = () => {
                 {!isMobile && <TabsTrigger value="thriller">Thriller</TabsTrigger>}
                 {isMobile && <TabsTrigger value="documentary" className="text-xs">Doc</TabsTrigger>}
               </TabsList>
-            </Tabs> */}
+            </Tabs>
 
             {/* Series Grid */}
-            
-
             <div className="space-y-8">
-  {movies.map((series) => {
-    const isExpanded = expandedSeries === series.id;
-    const progress = getProgress(series.id, 1);
+              {filteredSeries.map((series) => {
+                const isExpanded = expandedSeries === series.id;
+                const progress = getProgress(series.id, 1);
 
-    return (
-      <Card key={series.id} className="bg-card-accent/30 border-border/20 overflow-hidden">
-        <CardContent className="p-0">
-          <div className="md:flex">
-            
-            {/* Poster */}
-            <div className="md:w-64 relative">
-              <img 
-                src={series?.tv_portrait_image || series?.tv_banner || series?.tv_landscape_image} 
-                alt={series.title}
-                className="w-full h-96 md:h-full object-cover"
-              />
-              <div className="absolute top-3 left-3 right-3 flex justify-between items-start">
-                <Badge className="bg-golden text-black text-xs font-semibold">
-                  S{series?.seasons?.length || 1}
-                </Badge>
-                {series?.rating_avg && (
-                  <div className="flex items-center space-x-1 bg-black/60 backdrop-blur-sm px-2 py-1 rounded-full">
-                    <Star className="w-3 h-3 text-golden fill-current" />
-                    <span className="text-xs text-white font-medium">{series?.rating_avg}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Info */}
-            <div className="flex-1 p-6">
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <h2 className="text-2xl font-bold text-foreground mb-2">{series?.title}</h2>
-                  <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground mb-3">
-                    {/* <Badge variant="secondary">{series?.state}</Badge> */}
-                    <span>{series?.release_date}</span>
-                    <span>•</span>
-                    <span>{series?.genres}</span>
-                    <span>•</span>
-                    <span>{series?.language}</span>
-                    <span>•</span>
-                    <span>{series?.total_episode_count} Episodes</span>
-                  </div>
-                  <p className="text-muted-foreground mb-4 max-w-2xl">
-                    {series?.overview}
-                  </p>
-                </div>
-
-                <Button size="sm" variant="ghost" onClick={(e) => handleWatchlistToggle(series, e)}>
-                  {isInWatchlist(series.id) ? (
-                    <BookmarkCheck className="w-5 h-5 text-golden" />
-                  ) : (
-                    <BookmarkPlus className="w-5 h-5" />
-                  )}
-                </Button>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex gap-3 mb-4">
-                <Button 
-                  className="bg-golden text-black hover:bg-golden/90"
-                  onClick={() => handlePlayEpisode(series, series?.seasons?.[0]?.episodes?.[0])}
-                >
-                  <Play className="w-4 h-4 mr-2" />
-                  Watch Free Episode
-                </Button>
-
-                <Button 
-                  variant="outline"
-                  className="border-golden/30 text-golden hover:bg-golden/10"
-                  onClick={() => handleBuySeries(series)}
-                >
-                  Buy Full Series
-                </Button>
-
-                <Button 
-                  variant="outline"
-                  onClick={() => setExpandedSeries(isExpanded ? null : series.id)}
-                >
-                  {isExpanded ? 'Hide' : 'Show'} Episodes
-                  <ChevronRight className={`w-4 h-4 ml-2 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
-                </Button>
-              </div>
-
-              {/* Season + Episodes */}
-              {isExpanded && (
-                <div className="mt-6 space-y-6 max-h-96 overflow-y-auto">
-
-                  {series?.seasons?.map((season, sIndex) => (
-                    <div key={sIndex}>
-                      <h3 className="text-lg font-semibold text-golden mb-3">
-                        Season {sIndex + 1}
-                      </h3>
-
-                      <div className="space-y-2">
-                        {season?.episodes?.map((episode) => {
-                          const episodeProgress = getProgress(series.id, episode.id);
-
-                          return (
-                            <div 
-                              key={episode.id}
-                              className="flex items-center gap-4 p-3 bg-background/50 rounded-lg hover:bg-background/70 transition-colors cursor-pointer"
-                              onClick={() => handlePlayEpisode(series, episode)}
-                            >
-                              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-card-accent flex items-center justify-center">
-                                {episode.isFree ? (
-                                  <Play className="w-4 h-4 text-golden" />
-                                ) : (
-                                  <Lock className="w-4 h-4 text-muted-foreground" />
-                                )}
-                              </div>
-
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-sm font-semibold text-foreground">
-                                    {episode.episodeNumber}. {episode.name}
-                                  </span>
-                                  {episode.isFree && (
-                                    <Badge className="bg-golden/20 text-golden text-xs">FREE</Badge>
-                                  )}
-                                </div>
-
-                                {episodeProgress && (
-                                  <div className="mt-1 h-1 bg-card-accent rounded-full overflow-hidden">
-                                    <div 
-                                      className="h-full bg-golden"
-                                      style={{ width: `${episodeProgress.progress}%` }}
-                                    />
-                                  </div>
-                                )}
-                              </div>
-
-                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                <Clock className="w-3 h-3" />
-                                {episode.duration}
-                              </div>
+                return (
+                  <Card key={series.id} className="bg-card-accent/30 border-border/20 overflow-hidden">
+                    <CardContent className="p-0">
+                      <div className="md:flex">
+                        {/* Series Poster */}
+                        <div className="md:w-64 relative">
+                          <img 
+                            src={series.poster} 
+                            alt={series.title}
+                            className="w-full h-96 md:h-full object-cover"
+                          />
+                          <div className="absolute top-3 left-3 right-3 flex justify-between items-start">
+                            <Badge className="bg-golden text-black text-xs font-semibold">
+                              S{series.totalSeasons}
+                            </Badge>
+                            <div className="flex items-center space-x-1 bg-black/60 backdrop-blur-sm px-2 py-1 rounded-full">
+                              <Star className="w-3 h-3 text-golden fill-current" />
+                              <span className="text-xs text-white font-medium">{series.rating}</span>
                             </div>
-                          );
-                        })}
+                          </div>
+                        </div>
+
+                        {/* Series Info */}
+                        <div className="flex-1 p-6">
+                          <div className="flex items-start justify-between mb-4">
+                            <div>
+                              <h2 className="text-2xl font-bold text-foreground mb-2">{series.title}</h2>
+                              <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground mb-3">
+                                <Badge variant="secondary">{series.state}</Badge>
+                                <span>{series.year}</span>
+                                <span>•</span>
+                                <span>{series.genre}</span>
+                                <span>•</span>
+                                <span>{series.language}</span>
+                                <span>•</span>
+                                <span>{series.totalEpisodes} Episodes</span>
+                              </div>
+                              <p className="text-muted-foreground mb-4 max-w-2xl">
+                                {series.description}
+                              </p>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={(e) => handleWatchlistToggle(series, e)}
+                            >
+                              {isInWatchlist(series.id) ? (
+                                <BookmarkCheck className="w-5 h-5 text-golden" />
+                              ) : (
+                                <BookmarkPlus className="w-5 h-5" />
+                              )}
+                            </Button>
+                          </div>
+
+                          <div className="flex gap-3 mb-4">
+                            <Button 
+                              className="bg-golden text-black hover:bg-golden/90"
+                              onClick={() => handlePlayEpisode(series, series.episodes[0])}
+                            >
+                              <Play className="w-4 h-4 mr-2" />
+                              Watch Free Episode
+                            </Button>
+                            <Button 
+                              variant="outline"
+                              className="border-golden/30 text-golden hover:bg-golden/10"
+                              onClick={() => handleBuySeries(series)}
+                            >
+                              Buy Full Series
+                            </Button>
+                            <Button 
+                              variant="outline"
+                              onClick={() => setExpandedSeries(isExpanded ? null : series.id)}
+                            >
+                              {isExpanded ? 'Hide' : 'Show'} Episodes
+                              <ChevronRight className={`w-4 h-4 ml-2 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
+                            </Button>
+                          </div>
+
+                          {/* Episode List */}
+                          {isExpanded && (
+                            <div className="mt-6 space-y-2 max-h-96 overflow-y-auto">
+                              {series.episodes.map((episode) => {
+                                const episodeProgress = getProgress(series.id, episode.id);
+                                
+                                return (
+                                  <div 
+                                    key={episode.id}
+                                    className="flex items-center gap-4 p-3 bg-background/50 rounded-lg hover:bg-background/70 transition-colors cursor-pointer"
+                                    onClick={() => handlePlayEpisode(series, episode)}
+                                  >
+                                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-card-accent flex items-center justify-center">
+                                      {episode.isFree ? (
+                                        <Play className="w-4 h-4 text-golden" />
+                                      ) : (
+                                        <Lock className="w-4 h-4 text-muted-foreground" />
+                                      )}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-sm font-semibold text-foreground">
+                                          {episode.episodeNumber}. {episode.title}
+                                        </span>
+                                        {episode.isFree && (
+                                          <Badge className="bg-golden/20 text-golden text-xs">FREE</Badge>
+                                        )}
+                                      </div>
+                                      {episodeProgress && (
+                                        <div className="mt-1 h-1 bg-card-accent rounded-full overflow-hidden">
+                                          <div 
+                                            className="h-full bg-golden"
+                                            style={{ width: `${episodeProgress.progress}%` }}
+                                          />
+                                        </div>
+                                      )}
+                                    </div>
+                                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                      <Clock className="w-3 h-3" />
+                                      {episode.duration}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
-
-                </div>
-              )}
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  })}
-</div>
-
-
-            
           </div>
         </section>
 

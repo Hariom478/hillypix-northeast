@@ -29,10 +29,12 @@ export const requestWithToken = async (
   }
 };
 
-export async function getHomePage(user_id) {
+export async function getHomePage(user_id,type=null) {
+
+  
   const query = `
-    query GetHomePage($user_id: Int) {
-          getHomePage(user_id: $user_id) {
+    query GetHomePage($user_id: Int,$type: String) {
+          getHomePage(user_id: $user_id,type: $type) {
         data {
           banner {
             id
@@ -79,6 +81,9 @@ export async function getHomePage(user_id) {
                 type
                 language
                 genres
+                total_episode_count
+                release_date
+                rating_avg
                 tv_banner
                 tv_portrait_image
                 tv_landscape_image
@@ -91,6 +96,10 @@ export async function getHomePage(user_id) {
                     amount
                     duration
                 }
+
+                seasons 
+                { id release_date poster number title_id episode_count episodes { id name description poster release_date season_id video_id video { id name thumbnail url type quality title_id language runtime advertisement_video is_paid category } } }
+
               }
             }
           }
@@ -103,7 +112,9 @@ export async function getHomePage(user_id) {
 
   const variables = {
     user_id: user_id ? Number(user_id) : null,
+    type:type
   };
+  
 
   try {
     const response = await graphQLClient.request(query, variables);
