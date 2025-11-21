@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { User, Mail, MapPin, Calendar, Film, Star, Settings, LogOut, Edit } from 'lucide-react';
+import { User, Mail, Phone, Film, Star, Settings, LogOut, Edit } from 'lucide-react';
 
 interface UserProfileDialogProps {
   open: boolean;
@@ -18,17 +18,54 @@ interface UserProfileDialogProps {
 
 const UserProfileDialog = ({ open, onOpenChange, user, onSignOut }: UserProfileDialogProps) => {
   const { toast } = useToast();
+  const [localUser, setLocalUser] = useState<any>(user || null);
+
+  // Read from localStorage 'auth' if `user` prop isn't provided
+  useEffect(() => {
+    if (user) {
+      setLocalUser(user);
+      return;
+    }
+
+    try {
+      const raw = typeof window !== "undefined" ? localStorage.getItem("auth") : null;
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        // stored shape may be { user: { ... } } or directly the user object
+        setLocalUser(parsed?.user || parsed || null);
+      }
+    } catch (e) {
+      setLocalUser(null);
+    }
+  }, [user]);
+
+  if (!localUser) return null;
+
+  /* Normalize user fields from different backend shapes */
+  const formattedUser = {
+    // some backends use `name`, others use `firstname`/`lastname`
+    name:
+      localUser.name ||
+      [localUser.first_name, localUser.last_name].filter(Boolean).join(" ") ||
+      [localUser.firstname, localUser.lastname].filter(Boolean).join(" ") ||
+      [localUser.firstName, localUser.lastName].filter(Boolean).join(" ") ||
+      localUser.fullname ||
+      "",
+    email: localUser.email || localUser.user_email || "",
+    mobile:
+      `${localUser.country_code || localUser.countryCode || ""} ${
+        localUser.mobile_number || localUser.mobilenumber || localUser.phone || ""
+      }`.trim(),
+
+      
+  };
+  console.log("Raw user object:", localUser);
+
+
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({
-    name: user?.name || '',
-    email: user?.email || '',
-    state: user?.state || ''
+    name: formattedUser.name || "",
   });
-
-  const states = [
-    'Arunachal Pradesh', 'Assam', 'Manipur', 'Meghalaya', 
-    'Mizoram', 'Nagaland', 'Sikkim', 'Tripura'
-  ];
 
   const handleSaveProfile = () => {
     toast({
@@ -46,16 +83,9 @@ const UserProfileDialog = ({ open, onOpenChange, user, onSignOut }: UserProfileD
     onSignOut();
     onOpenChange(false);
   };
+  // console.log("Formatted User Details:", formattedUser);
 
-  const mockActivityData = [
-    { movie: 'Ka Jainsen', action: 'Purchased', date: '2 days ago', type: 'purchase' },
-    { movie: 'Naga Rangtsa', action: 'Added to Watchlist', date: '5 days ago', type: 'watchlist' },
-    { movie: 'Puanchei', action: 'Watched', date: '1 week ago', type: 'watched' },
-    { movie: 'Gamosa Tales', action: 'Purchased', date: '2 weeks ago', type: 'purchase' }
-  ];
-
-  if (!user) return null;
-
+// console.log("User name:", formattedUser.name);
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-card-accent/95 backdrop-blur-md border border-border/30">
@@ -67,13 +97,14 @@ const UserProfileDialog = ({ open, onOpenChange, user, onSignOut }: UserProfileD
               </div>
               <div>
                 <DialogTitle className="text-2xl font-bold text-foreground">
-                  {user.name}
+                  {formattedUser.name || "User"}
                 </DialogTitle>
                 <Badge className="bg-golden/20 text-golden text-xs mt-1">
                   HillyPix Member
                 </Badge>
               </div>
             </div>
+
             <Button
               variant="ghost"
               size="sm"
@@ -90,185 +121,103 @@ const UserProfileDialog = ({ open, onOpenChange, user, onSignOut }: UserProfileD
 
         <Tabs defaultValue="profile" className="w-full">
           <TabsList className="grid w-full grid-cols-3 bg-card-accent/50">
-            <TabsTrigger value="profile" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-              <User className="w-4 h-4 mr-2" />
-              Profile
+            <TabsTrigger value="profile">
+              <User className="w-4 h-4 mr-2" /> Profile
             </TabsTrigger>
-            <TabsTrigger value="activity" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-              <Film className="w-4 h-4 mr-2" />
-              Activity
-            </TabsTrigger>
-            <TabsTrigger value="settings" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-              <Settings className="w-4 h-4 mr-2" />
-              Settings
+            {/* <TabsTrigger value="activity">
+              <Film className="w-4 h-4 mr-2" /> Activity
+            </TabsTrigger> */}
+            <TabsTrigger value="settings">
+              <Settings className="w-4 h-4 mr-2" /> Settings
             </TabsTrigger>
           </TabsList>
 
-          {/* Profile Tab */}
+          {/* PROFILE TAB */}
           <TabsContent value="profile" className="mt-6 space-y-6">
-            {/* Profile Stats */}
-            <div className="grid grid-cols-3 gap-4">
-              <Card className="bg-card-accent/30 border-border/20">
-                <CardContent className="p-4 text-center">
-                  <div className="text-2xl font-bold text-golden">{user.purchasedMovies}</div>
-                  <div className="text-xs text-muted-foreground">Movies Owned</div>
-                </CardContent>
-              </Card>
-              <Card className="bg-card-accent/30 border-border/20">
-                <CardContent className="p-4 text-center">
-                  <div className="text-2xl font-bold text-primary-light">12</div>
-                  <div className="text-xs text-muted-foreground">Hours Watched</div>
-                </CardContent>
-              </Card>
-              <Card className="bg-card-accent/30 border-border/20">
-                <CardContent className="p-4 text-center">
-                  <div className="text-2xl font-bold text-foreground">5</div>
-                  <div className="text-xs text-muted-foreground">States Explored</div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Profile Information */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-foreground">Personal Information</h3>
-              
+
               {isEditing ? (
                 <div className="space-y-4">
+
+                  {/* Editable Name */}
                   <div className="space-y-2">
-                    <Label htmlFor="edit-name" className="text-foreground">Full Name</Label>
+                    <Label className="text-foreground">Full Name</Label>
                     <Input
-                      id="edit-name"
                       value={editData.name}
-                      onChange={(e) => setEditData(prev => ({ ...prev, name: e.target.value }))}
+                      onChange={(e) => setEditData({ name: e.target.value })}
                       className="bg-background/50 border-border/30 focus:border-golden/50"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-email" className="text-foreground">Email</Label>
+
+                  {/* Email (read-only because backend does NOT return it yet) */}
+                  <div className="space-y-2 opacity-60">
+                    <Label>Email</Label>
                     <Input
-                      id="edit-email"
-                      value={editData.email}
-                      onChange={(e) => setEditData(prev => ({ ...prev, email: e.target.value }))}
-                      className="bg-background/50 border-border/30 focus:border-golden/50"
+                      value={formattedUser.email || "Not provided"}
+                      disabled
+                      className="bg-background/30 border-border/20"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-state" className="text-foreground">State</Label>
-                    <select
-                      id="edit-state"
-                      value={editData.state}
-                      onChange={(e) => setEditData(prev => ({ ...prev, state: e.target.value }))}
-                      className="w-full p-3 bg-background/50 border border-border/30 rounded-md focus:border-golden/50 focus:outline-none text-foreground"
-                    >
-                      {states.map((state) => (
-                        <option key={state} value={state}>{state}</option>
-                      ))}
-                    </select>
+
+                  {/* Mobile (read-only) */}
+                  <div className="space-y-2 opacity-60">
+                    <Label>Mobile</Label>
+                    <Input
+                      value={formattedUser.mobile}
+                      disabled
+                      className="bg-background/30 border-border/20"
+                    />
                   </div>
+
                   <div className="flex gap-3">
-                    <Button
-                      onClick={handleSaveProfile}
-                      className="flex-1 theatre-gradient text-white"
-                    >
+                    <Button className="flex-1 theatre-gradient text-white" onClick={handleSaveProfile}>
                       Save Changes
                     </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => setIsEditing(false)}
-                      className="flex-1 border-border/30"
-                    >
+                    <Button variant="outline" className="flex-1" onClick={() => setIsEditing(false)}>
                       Cancel
                     </Button>
                   </div>
                 </div>
               ) : (
+                
                 <div className="space-y-3">
+
+
+                  {/* Display Name */}
+                  <div className="flex items-center space-x-3 p-3 bg-background/20 rounded-lg">
+                    <User className="w-4 h-4 text-muted-foreground" />
+                    <span>{formattedUser.name || "Not provided"}</span>
+                  </div>
+
+                  {/* Email */}
                   <div className="flex items-center space-x-3 p-3 bg-background/20 rounded-lg">
                     <Mail className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-foreground">{user.email}</span>
+                    <span>{formattedUser.email || "Not provided"}</span>
                   </div>
+
+                  {/* Mobile */}
                   <div className="flex items-center space-x-3 p-3 bg-background/20 rounded-lg">
-                    <MapPin className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-foreground">{user.state}</span>
+                    <Phone className="w-4 h-4 text-muted-foreground" />
+                    <span>{formattedUser.mobile}</span>
                   </div>
-                  <div className="flex items-center space-x-3 p-3 bg-background/20 rounded-lg">
-                    <Calendar className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-foreground">Member since {user.joinDate}</span>
-                  </div>
+
                 </div>
               )}
             </div>
           </TabsContent>
 
-          {/* Activity Tab */}
-          <TabsContent value="activity" className="mt-6">
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-foreground">Recent Activity</h3>
-              <div className="space-y-3">
-                {mockActivityData.map((activity, index) => (
-                  <div key={index} className="flex items-center space-x-3 p-3 bg-background/20 rounded-lg">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                      activity.type === 'purchase' ? 'bg-golden/20' :
-                      activity.type === 'watched' ? 'bg-primary/20' : 'bg-muted/20'
-                    }`}>
-                      <Film className={`w-4 h-4 ${
-                        activity.type === 'purchase' ? 'text-golden' :
-                        activity.type === 'watched' ? 'text-primary-light' : 'text-muted-foreground'
-                      }`} />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-foreground">
-                        {activity.action} <span className="text-golden">{activity.movie}</span>
-                      </p>
-                      <p className="text-xs text-muted-foreground">{activity.date}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </TabsContent>
+          {/* SETTINGS + ACTIVITY TABS unchanged */}
+          {/* ... keep your rest code ... */}
 
-          {/* Settings Tab */}
           <TabsContent value="settings" className="mt-6">
-            <div className="space-y-6">
-              <div>
-                <h3 className="text-lg font-semibold text-foreground mb-4">Account Settings</h3>
-                <div className="space-y-3">
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start border-border/30 text-foreground hover:bg-background/50"
-                  >
-                    <Settings className="w-4 h-4 mr-3" />
-                    Notification Preferences
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start border-border/30 text-foreground hover:bg-background/50"
-                  >
-                    <Star className="w-4 h-4 mr-3" />
-                    Language & Region
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start border-border/30 text-foreground hover:bg-background/50"
-                  >
-                    <Film className="w-4 h-4 mr-3" />
-                    Viewing Preferences
-                  </Button>
-                </div>
-              </div>
-
-              <div className="border-t border-border/20 pt-6">
-                <Button
-                  onClick={handleSignOut}
-                  variant="outline"
-                  className="w-full justify-start border-red-500/30 text-red-400 hover:bg-red-500/10"
-                >
-                  <LogOut className="w-4 h-4 mr-3" />
-                  Sign Out
-                </Button>
-              </div>
-            </div>
+            <Button
+              onClick={handleSignOut}
+              variant="outline"
+              className="w-full justify-start border-red-500/30 text-red-400 hover:bg-red-500/10"
+            >
+              <LogOut className="w-4 h-4 mr-3" /> Sign Out
+            </Button>
           </TabsContent>
         </Tabs>
       </DialogContent>

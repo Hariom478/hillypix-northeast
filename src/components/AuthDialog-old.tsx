@@ -1,12 +1,26 @@
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useToast } from '@/hooks/use-toast';
-import { User, Lock, Mail, Eye, EyeOff, Film, Star, Phone } from 'lucide-react';
+"use client";
+
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { parsePhoneNumberWithError } from "libphonenumber-js";
+import { isMobile as detectMobile, browserName as detectBrowser, osName as detectOS } from "react-device-detect";
+import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Star, Film } from "lucide-react";
+import { loginUser, registerUser, verifyLoginOtp } from "@/lib/graphql";
+
 interface AuthDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -15,104 +29,135 @@ interface AuthDialogProps {
 
 const AuthDialog = ({ open, onOpenChange, onAuthSuccess }: AuthDialogProps) => {
   const { toast } = useToast();
-  const [showPassword, setShowPassword] = useState(false);
-  const [loginData, setLoginData] = useState({
-    email: '',
-    password: ''
-  });
-  const [signupData, setSignupData] = useState({
-    fullName: '',
-    email: '',
-    mobile: '',
-    // password: '',
-    // confirmPassword: '',
-    // state: ''
-  });
+  const navigate = useNavigate();
 
-  const states = [
-    'Arunachal Pradesh', 'Assam', 'Manipur', 'Meghalaya', 
-    'Mizoram', 'Nagaland', 'Sikkim', 'Tripura'
-  ];
+  const { register, handleSubmit, reset, formState: { errors } } = useForm();
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Simulate login
-    if (!loginData.email || !loginData.password) {
-      toast({
-        title: "Missing Information",
-        description: "Please fill in all fields.",
-        variant: "destructive",
-      });
-      return;
-    }
+  const [isOtpSend, setIsOtpSend] = useState(false);
+  const [mobileNumber, setMobileNumber] = useState("");
+  const [otpMessage, setOtpMessage] = useState("");
+  const [resendOTPBody, setResendOTPBody] = useState<any>({});
+  const [deviceInfo, setDeviceInfo] = useState({ isMobile: null, browserName: "", osName: "" });
+  const [activeTab, setActiveTab] = useState<"login" | "signup">("login");
 
-    // Mock successful login
-    // const mockUser = {
-    //   id: '1',
-    //   name: loginData.email.split('@')[0],
-    //   email: loginData.email,
-    //   state: 'Assam',
-    //   joinDate: '2024',
-    //   purchasedMovies: 3
-    // // };
-
-    // toast({
-    //   title: "Welcome back!",
-    //   description: `Successfully logged in as ${mockUser.name}`,
-    // });
-
-    // onAuthSuccess(mockUser);
-    // onOpenChange(false);
+  const splitName = (fullName: string) => {
+    const parts = fullName.trim().split(" ");
+    return { firstName: parts[0] || "", lastName: parts.slice(1).join(" ") || "" };
   };
 
-  const handleSignup = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Basic validation
-    // if (!signupData.fullName || !signupData.email || !signupData.password || !signupData.state) {
-    //   toast({
-    //     title: "Missing Information",
-    //     description: "Please fill in all required fields.",
-    //     variant: "destructive",
-    //   });
-    //   return;
-    // }
-     if (!signupData.fullName || !signupData.email || !signupData.mobile) {
-      toast({
-        title: "Missing Information",
-        description: "Please fill in all required fields.",
-        variant: "destructive",
-      });
-      return;
+  useEffect(() => {
+    setDeviceInfo({ isMobile: detectMobile, browserName: detectBrowser, osName: detectOS });
+  }, []);
+
+  // ======================
+  // SIGNUP
+  // ======================
+  const handleSignup = async (data: any) => {
+    try {
+      const phoneData = parsePhoneNumberWithError(data.mobile, "IN");
+      if (!phoneData) throw new Error("Invalid mobile number");
+
+      const { firstName, lastName } = splitName(data.fullName);
+
+      const input = {
+        firstname: firstName,
+        lastname: lastName,
+        email: data.email,
+        mobilenumber: phoneData.nationalNumber,
+        country_code: `+${phoneData.countryCallingCode}`,
+      };
+
+      const body = { mobilenumber: phoneData.nationalNumber, country_code: `+${phoneData.countryCallingCode}`, device_type: 1 };
+
+      const res = await registerUser(input);
+
+      if (res?.register?.status) {
+        setMobileNumber(res.register.user.mobile_number);
+        setIsOtpSend(true);
+        setResendOTPBody(body);
+        setActiveTab("signup");
+
+        toast({ title: "Success", description: "Registered successfully. Please verify OTP." });
+      } else {
+        toast({ title: "Registration Failed", description: res?.register?.message?.error || "Try again.", variant: "destructive" });
+      }
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message || "Something went wrong.", variant: "destructive" });
     }
+  };
 
-    // if (signupData.password !== signupData.confirmPassword) {
-    //   toast({
-    //     title: "Password Mismatch",
-    //     description: "Passwords do not match.",
-    //     variant: "destructive",
-    //   });
-    //   return;
-    // }
+  // ======================
+  // LOGIN
+  // ======================
+  const handleLogin = async (data: any) => {
+    try {
+      if (!data.mobile) throw new Error("Mobile is required");
 
-    // Mock successful signup
-    const mockUser = {
-      id: '2',
-      name: signupData.fullName,
-      email: signupData.email,
-      mobile: signupData.mobile,
-      joinDate: '2024',
-      purchasedMovies: 0
-    };
+      const phoneData = parsePhoneNumberWithError(data.mobile, "IN");
 
-    toast({
-      title: "Welcome to HillyPix!",
-      description: `Account created successfully for ${mockUser.name}`,
-    });
+      const body = { mobilenumber: phoneData.nationalNumber, country_code: `+${phoneData.countryCallingCode}`, device_type: 1 };
 
-    onAuthSuccess(mockUser);
-    onOpenChange(false);
+      const res = await loginUser(body);
+
+      if (res?.login?.status && res?.login?.user) {
+        // Direct login
+        localStorage.setItem("auth", JSON.stringify({ user: res.login.user }));
+
+        toast({ title: "Login Successful", description: "Welcome back!" });
+
+        onAuthSuccess(res.login.user);
+        navigate("/");
+        onOpenChange(false);
+      } else {
+        toast({ title: "Not Registered", description: "Firstly register your mobile.", variant: "destructive" });
+        setActiveTab("signup");
+      }
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message || "Something went wrong.", variant: "destructive" });
+    }
+  };
+
+  // ======================
+  // OTP VERIFICATION (only for signup)
+  // ======================
+  const verifyOtp = async (data: { otp: string }) => {
+    try {
+      const input = {
+        otp: data.otp,
+        mobilenumber: mobileNumber,
+        device_type: 1,
+        device_name: deviceInfo.osName + " " + deviceInfo.browserName,
+      };
+
+      const res = await verifyLoginOtp(input);
+
+      if (res?.verifyloginotp?.status) {
+        localStorage.setItem("auth", JSON.stringify({ token: res.verifyloginotp.data.token, user: res.verifyloginotp.data.UserDetails }));
+
+        toast({ title: "Success", description: "OTP verified successfully!" });
+
+        onAuthSuccess(res.verifyloginotp.data.UserDetails);
+        navigate("/");
+        onOpenChange(false);
+      } else {
+        toast({ title: "OTP Verification Failed", description: res?.verifyloginotp?.message || "OTP verification failed!", variant: "destructive" });
+      }
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message || "Something went wrong.", variant: "destructive" });
+    }
+  };
+
+  // ======================
+  // RESEND OTP
+  // ======================
+  const resendOTP = async () => {
+    if (!resendOTPBody.mobilenumber) return;
+    try {
+      const res = await loginUser(resendOTPBody);
+      if (res?.login?.status) toast({ title: "OTP Resent", description: "Check your mobile again." });
+    } catch {
+      toast({ title: "Error", description: "Failed to resend OTP", variant: "destructive" });
+    }
   };
 
   return (
@@ -124,212 +169,59 @@ const AuthDialog = ({ open, onOpenChange, onAuthSuccess }: AuthDialogProps) => {
               <Film className="w-5 h-5 text-golden" />
             </div>
             <div>
-              <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-golden to-primary-light bg-clip-text text-transparent">
-                Join HillyPix
-              </DialogTitle>
-              <Badge className="bg-golden/20 text-golden text-xs mt-1">
-                🎭 HillyWood Experience
-              </Badge>
+              <DialogTitle className="text-2xl font-bold">Join HillyPix</DialogTitle>
+              <Badge className="bg-golden/20 text-golden text-xs mt-1">🎭 HillyWood Experience</Badge>
             </div>
           </div>
-          <DialogDescription className="text-muted-foreground">
-            Access your cultural cinema library and exclusive premieres
-          </DialogDescription>
+          <DialogDescription>Access your cultural cinema library and exclusive premieres</DialogDescription>
         </DialogHeader>
 
-        <Tabs defaultValue="login" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 bg-card-accent/50">
-            <TabsTrigger value="login" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-              Sign In
-            </TabsTrigger>
-            <TabsTrigger value="signup" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-              Sign Up
-            </TabsTrigger>
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "login" | "signup")}>
+          <TabsList className="grid grid-cols-2">
+            <TabsTrigger value="login">Sign In</TabsTrigger>
+            <TabsTrigger value="signup">Sign Up</TabsTrigger>
           </TabsList>
 
-          {/* Login Tab */}
-          <TabsContent value="login" className="mt-6">
-            <form onSubmit={handleLogin} className="space-y-4">
-              {/* <div className="space-y-2">
-                <Label htmlFor="login-email" className="text-foreground">Email</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    id="login-email"
-                    type="email"
-                    value={loginData.email}
-                    onChange={(e) => setLoginData(prev => ({ ...prev, email: e.target.value }))}
-                    className="pl-10 bg-background/50 border-border/30 focus:border-golden/50"
-                    placeholder="your@email.com"
-                  />
-                </div>
-              </div> */}
-
-              <div className="space-y-2">
-                <Label htmlFor="login-mobile" className="text-foreground">Mobile</Label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    id="login-mobile"
-                    type="email"
-                    value={loginData.email}
-                    onChange={(e) => setLoginData(prev => ({ ...prev, email: e.target.value }))}
-                    className="pl-10 bg-background/50 border-border/30 focus:border-golden/50"
-                    placeholder="Mobile Number"
-                  />
-                </div>
-              </div>
-
-              {/* <div className="space-y-2">
-                <Label htmlFor="login-password" className="text-foreground">Password</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    id="login-password"
-                    type={showPassword ? "text" : "password"}
-                    value={loginData.password}
-                    onChange={(e) => setLoginData(prev => ({ ...prev, password: e.target.value }))}
-                    className="pl-10 pr-10 bg-background/50 border-border/30 focus:border-golden/50"
-                    placeholder="Enter your password"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-              </div> */}
-
-              {/* <div className="text-right">
-                <button
-                  type="button"
-                  className="text-sm text-golden hover:text-golden-light"
-                >
-                  Forgot password?
-                </button>
-              </div> */}
-
-              <Button
-                type="submit"
-                className="w-full theatre-gradient text-white hover:scale-105 theatre-transition"
-              >
-                Sign In to HillyPix
-              </Button>
+          {/* ===== LOGIN ===== */}
+          <TabsContent value="login">
+            <form onSubmit={handleSubmit(handleLogin)} className="space-y-4">
+              <Label>Mobile</Label>
+              <Input {...register("mobile")} placeholder="Enter mobile number" />
+              <Button type="submit" className="w-full">Sign In</Button>
             </form>
           </TabsContent>
 
-          {/* Signup Tab */}
-          <TabsContent value="signup" className="mt-6">
-            <form onSubmit={handleSignup} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="signup-name" className="text-foreground">Full Name</Label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    id="signup-name"
-                    value={signupData.fullName}
-                    onChange={(e) => setSignupData(prev => ({ ...prev, fullName: e.target.value }))}
-                    className="pl-10 bg-background/50 border-border/30 focus:border-golden/50"
-                    placeholder="Your full name"
-                  />
-                </div>
+          {/* ===== SIGNUP ===== */}
+          <TabsContent value="signup">
+            {isOtpSend ? (
+              <div className="bg-white p-6 rounded-lg shadow-md w-full max-w-md mx-auto">
+                <form onSubmit={handleSubmit(verifyOtp)} className="space-y-4">
+                  <p className="text-sm text-gray-700">OTP sent to {mobileNumber}</p>
+                  <Input {...register("otp", { required: true, minLength: 6, maxLength: 6 })} placeholder="Enter OTP" maxLength={6} />
+                  <Button type="button" onClick={resendOTP} variant="outline">Resend OTP</Button>
+                  <Button type="submit" className="w-full">Verify OTP</Button>
+                </form>
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="signup-email" className="text-foreground">Email</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    id="signup-email"
-                    type="email"
-                    value={signupData.email}
-                    onChange={(e) => setSignupData(prev => ({ ...prev, email: e.target.value }))}
-                    className="pl-10 bg-background/50 border-border/30 focus:border-golden/50"
-                    placeholder="your@email.com"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="signup-mobile" className="text-foreground">Mobile</Label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    id="login-mobile"
-                    type="email"
-                    value={loginData.email}
-                    onChange={(e) => setLoginData(prev => ({ ...prev, email: e.target.value }))}
-                    className="pl-10 bg-background/50 border-border/30 focus:border-golden/50"
-                    placeholder="Mobile Number"
-                  />
-                </div>
-              </div>
-
-              {/* <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password" className="text-foreground">Password</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      id="signup-password"
-                      type={showPassword ? "text" : "password"}
-                      value={signupData.password}
-                      onChange={(e) => setSignupData(prev => ({ ...prev, password: e.target.value }))}
-                      className="pl-10 bg-background/50 border-border/30 focus:border-golden/50"
-                      placeholder="Password"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="signup-confirm" className="text-foreground">Confirm</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      id="signup-confirm"
-                      type={showPassword ? "text" : "password"}
-                      value={signupData.confirmPassword}
-                      onChange={(e) => setSignupData(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                      className="pl-10 bg-background/50 border-border/30 focus:border-golden/50"
-                      placeholder="Confirm"
-                    />
-                  </div>
-                </div>
-              </div> */}
-
-              {/* <div className="flex items-center justify-between">
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="text-sm text-muted-foreground hover:text-foreground flex items-center"
-                >
-                  {showPassword ? <EyeOff className="w-3 h-3 mr-1" /> : <Eye className="w-3 h-3 mr-1" />}
-                  {showPassword ? 'Hide' : 'Show'} password
-                </button>
-              </div> */}
-
-              <Button
-                type="submit"
-                className="w-full theatre-gradient text-white hover:scale-105 theatre-transition"
-              >
-                Create Account
-              </Button>
-            </form>
+            ) : (
+              <form onSubmit={handleSubmit(handleSignup)} className="space-y-4">
+                <Label>Full Name</Label>
+                <Input {...register("fullName")} />
+                <Label>Email</Label>
+                <Input {...register("email")} type="email" />
+                <Label>Mobile</Label>
+                <Input {...register("mobile")} />
+                <Button type="submit" className="w-full">Create Account</Button>
+              </form>
+            )}
           </TabsContent>
         </Tabs>
 
-        {/* Cultural Quote */}
-        <div className="mt-6 p-4 bg-background/20 rounded-lg border border-border/20">
+        <div className="mt-6 p-4 bg-background/20 rounded-lg">
           <div className="flex items-center space-x-2 mb-2">
             <Star className="w-4 h-4 text-golden" />
             <span className="text-sm font-medium text-golden">HillyWood Promise</span>
           </div>
-          <p className="text-xs text-muted-foreground italic">
-            "Every story preserves our heritage, every ticket supports our artists, 
-            every view celebrates Northeast India's rich cultural tapestry."
-          </p>
+          <p className="text-xs italic">“Every story preserves our heritage…”</p>
         </div>
       </DialogContent>
     </Dialog>

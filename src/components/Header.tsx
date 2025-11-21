@@ -118,12 +118,12 @@ const Header = () => {
                 Music
               </Link>
             </Button>
-            <Button variant="ghost" asChild className={`text-foreground hover:text-golden theatre-transition ${location.pathname === '/hall-of-fame' ? 'text-golden' : ''}`}>
+            {/* <Button variant="ghost" asChild className={`text-foreground hover:text-golden theatre-transition ${location.pathname === '/hall-of-fame' ? 'text-golden' : ''}`}>
               <Link to="/hall-of-fame">
                 <Award className="w-4 h-4 mr-2" />
                 Hall of Fame
               </Link>
-            </Button>
+            </Button> */}
             <Button variant="ghost" asChild className={`text-foreground hover:text-golden theatre-transition ${location.pathname === '/hillywood-fiesta' ? 'text-golden' : ''}`}>
               <Link to="/hillywood-fiesta">
                 <PartyPopper className="w-4 h-4 mr-2" />
@@ -184,7 +184,11 @@ const Header = () => {
               >
                 <div className="w-8 h-8 rounded-full bg-golden/20 flex items-center justify-center">
                   <span className="text-xs font-semibold text-golden">
-                    {user.name.charAt(0).toUpperCase()}
+                    {user?.name
+    ? user.name.charAt(0).toUpperCase()
+    : user?.firstname
+    ? user.firstname.charAt(0).toUpperCase()
+    : 'U'}
                   </span>
                 </div>
               </Button>

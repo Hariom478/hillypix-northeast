@@ -210,10 +210,7 @@ const AuthDialog = ({ open, onOpenChange, onAuthSuccess }: AuthDialogProps) => {
         });
 
         onAuthSuccess(res.verifyloginotp.data.UserDetails);
-        
-        setTimeout(() => {
-          navigate("/");
-        }, 500);
+        navigate("/");
         onOpenChange(false);
       } else {
         toast({

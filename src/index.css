@@ -235,3 +235,15 @@
     letter-spacing: 0.01em;
   }
 }
+
+
+
+
+input.PhoneInputInput {
+    background-color: transparent;
+    outline: none;
+}
+
+.PhoneInputCountrySelect {
+    background-color: #242424;
+}

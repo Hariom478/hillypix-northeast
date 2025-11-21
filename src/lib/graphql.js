@@ -739,7 +739,7 @@ export async function verifyLoginOtp(input) {
             mobile_number
             country_code
             current_device_token
-          }
+          }  
         }
         login_devices { 
           id 
