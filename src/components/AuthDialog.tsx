@@ -21,7 +21,7 @@ import { useSearchParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import Link from "next/link";
 import { loginUser, registerUser } from "@/lib/graphql";
-import { parsePhoneNumber } from "libphonenumber-js";
+import { parsePhoneNumberWithError  } from "libphonenumber-js";
 
 interface AuthDialogProps {
   open: boolean;
@@ -67,7 +67,7 @@ const AuthDialog = ({ open, onOpenChange, onAuthSuccess }: AuthDialogProps) => {
       return;
     }
 
-    const phoneData = parsePhoneNumber(data.mobile);
+    const phoneData = parsePhoneNumberWithError(data.mobile, 'IN');
 
     const body = {
       mobilenumber: phoneData?.nationalNumber,
@@ -108,7 +108,7 @@ const AuthDialog = ({ open, onOpenChange, onAuthSuccess }: AuthDialogProps) => {
   // SIGNUP
   // ======================
   const handleSignup = async (data: any) => {
-    const phoneData = parsePhoneNumber(data.mobile);
+    const phoneData = parsePhoneNumberWithError(data.mobile, 'IN');
 
     if (!phoneData) {
       toast({
