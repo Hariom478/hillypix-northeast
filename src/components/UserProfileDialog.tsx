@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { updateUserProfile } from '@/lib/graphql';
 import { User, Mail, Phone, Film, Star, Settings, LogOut, Edit } from 'lucide-react';
 
 interface UserProfileDialogProps {
@@ -19,6 +20,8 @@ interface UserProfileDialogProps {
 const UserProfileDialog = ({ open, onOpenChange, user, onSignOut }: UserProfileDialogProps) => {
   const { toast } = useToast();
   const [localUser, setLocalUser] = useState<any>(user || null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
   // Read from localStorage 'auth' if `user` prop isn't provided
   useEffect(() => {
@@ -26,13 +29,24 @@ const UserProfileDialog = ({ open, onOpenChange, user, onSignOut }: UserProfileD
       setLocalUser(user);
       return;
     }
-
     try {
+      // Prefer the lightweight `hillypix-user` key used by the Header for quick rendering.
+      const savedLite = typeof window !== "undefined" ? localStorage.getItem("hillypix-user") : null;
+      if (savedLite) {
+        const lu = JSON.parse(savedLite);
+        setLocalUser(lu);
+        setAvatarPreview(lu?.avatar_url || lu?.avatar || null);
+        return;
+      }
+
+      // Fallback to the full `auth` object if present
       const raw = typeof window !== "undefined" ? localStorage.getItem("auth") : null;
       if (raw) {
         const parsed = JSON.parse(raw);
         // stored shape may be { user: { ... } } or directly the user object
-        setLocalUser(parsed?.user || parsed || null);
+        const lu = parsed?.user || parsed || null;
+        setLocalUser(lu);
+        setAvatarPreview(lu?.avatar_url || lu?.avatar || null);
       }
     } catch (e) {
       setLocalUser(null);
@@ -67,19 +81,120 @@ const UserProfileDialog = ({ open, onOpenChange, user, onSignOut }: UserProfileD
     name: formattedUser.name || "",
   });
 
-  const handleSaveProfile = () => {
-    toast({
-      title: "Profile Updated",
-      description: "Your profile has been successfully updated.",
-    });
-    setIsEditing(false);
+  // keep edit input in sync when the user object updates
+  useEffect(() => {
+    setEditData({ name: formattedUser.name || "" });
+  }, [formattedUser.name]);
+
+  // helper: return initials or first letter
+  const getInitial = (name?: string) => {
+    if (!name) return "U";
+    return name.trim().charAt(0).toUpperCase();
   };
+
+  // handle avatar file selection
+ const onAvatarSelected = async (file?: File | null) => {
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = async () => {
+    const dataUrl = String(reader.result);
+
+    const raw = localStorage.getItem("auth");
+    const parsed = raw ? JSON.parse(raw) : null;
+    const token = parsed?.token;
+
+    let avatar_url = dataUrl;
+
+    try {
+      const res = await updateUserProfile({ avatar_url: dataUrl }, token);
+      if (res?.updateUserProfile?.status) {
+        avatar_url = res.updateUserProfile.data.avatar_url;
+      }
+    } catch (e) {
+      console.log("Avatar update failed:", e);
+    }
+
+    // save final avatar
+    const newUserObj = {
+      ...localUser,
+      avatar_url,
+    };
+
+    if (parsed) {
+      parsed.user = newUserObj;
+      localStorage.setItem("auth", JSON.stringify(parsed));
+    }
+    localStorage.setItem("hillypix-user", JSON.stringify(newUserObj));
+
+    setLocalUser(newUserObj);
+    setAvatarPreview(avatar_url);
+  };
+
+  reader.readAsDataURL(file);
+};
+
+
+  const handleSaveProfile = async () => {
+  const newName = (editData.name || "").trim();
+  const parts = newName.split(" ");
+  const first_name = parts[0] || "";
+  const last_name = parts.slice(1).join(" ") || "";
+
+  const raw = localStorage.getItem("auth");
+  const parsed = raw ? JSON.parse(raw) : null;
+  const token = parsed?.token;
+
+  let updated = {
+    first_name,
+    last_name,
+    avatar_url: localUser.avatar_url,
+  };
+
+  try {
+    const res = await updateUserProfile(updated, token);
+
+    if (res?.updateUserProfile?.status) {
+      updated = res.updateUserProfile.data; // <-- backend updated values
+    }
+  } catch (e) {
+    console.log("Profile update failed:", e);
+  }
+
+  // Save to localStorage
+  const newUserObj = {
+    ...localUser,
+    ...updated,
+    name: `${updated.first_name} ${updated.last_name}`.trim(),
+  };
+
+  if (parsed) {
+    parsed.user = newUserObj;
+    localStorage.setItem("auth", JSON.stringify(parsed));
+  }
+  localStorage.setItem("hillypix-user", JSON.stringify(newUserObj));
+
+  setLocalUser(newUserObj);
+  toast({ title: "Profile Updated" });
+
+  setIsEditing(false);
+};
+
 
   const handleSignOut = () => {
     toast({
       title: "Signed Out",
       description: "You have been successfully signed out.",
     });
+    // clear both lightweight and full auth snapshots to avoid stale data on refresh
+    try {
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("hillypix-user");
+        localStorage.removeItem("auth");
+      }
+    } catch (e) {
+      /* ignore */
+    }
     onSignOut();
     onOpenChange(false);
   };
@@ -93,7 +208,15 @@ const UserProfileDialog = ({ open, onOpenChange, user, onSignOut }: UserProfileD
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="w-12 h-12 rounded-full bg-golden/20 flex items-center justify-center">
-                <User className="w-6 h-6 text-golden" />
+                {avatarPreview ? (
+                  // show image
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={avatarPreview} alt="avatar" className="w-12 h-12 rounded-full object-cover" />
+                ) : (
+                  <div className="w-12 h-12 rounded-full bg-golden/30 flex items-center justify-center text-xl font-semibold text-golden">
+                    {getInitial(formattedUser.name)}
+                  </div>
+                )}
               </div>
               <div>
                 <DialogTitle className="text-2xl font-bold text-foreground">
@@ -148,6 +271,33 @@ const UserProfileDialog = ({ open, onOpenChange, user, onSignOut }: UserProfileD
                       onChange={(e) => setEditData({ name: e.target.value })}
                       className="bg-background/50 border-border/30 focus:border-golden/50"
                     />
+                  </div>
+
+                  {/* Avatar upload */}
+                  <div className="space-y-2">
+                    <Label>Profile Photo</Label>
+                    <div className="flex items-center gap-3">
+                      {avatarPreview ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={avatarPreview} alt="avatar" className="w-16 h-16 rounded-full object-cover" />
+                      ) : (
+                        <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center text-xl font-semibold">
+                          {getInitial(editData.name)}
+                        </div>
+                      )}
+                      <div>
+                        <input
+                          id="avatar-input"
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => onAvatarSelected(e.target.files?.[0] ?? null)}
+                          className="hidden"
+                        />
+                        <label htmlFor="avatar-input" className="inline-block cursor-pointer text-sm text-indigo-600">
+                          {isUploadingAvatar ? "Uploading..." : "Change Photo"}
+                        </label>
+                      </div>
+                    </div>
                   </div>
 
                   {/* Email (read-only because backend does NOT return it yet) */}

@@ -21,7 +21,8 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Film, Star } from "lucide-react";
 import CountrySelect from "./CountrySelect";
-import { loginUser, registerUser, verifyLoginOtp } from "@/lib/graphql";
+import { loginUser, registerUser, verifyLoginOtp, logoutDevice } from "@/lib/graphql";
+import { saveServerAuth, mergeServerUser } from "@/lib/localAuth";
 
 interface AuthDialogProps {
   open: boolean;
@@ -39,22 +40,47 @@ const AuthDialog = ({ open, onOpenChange, onAuthSuccess }: AuthDialogProps) => {
     register,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors },
-  } = useForm();
+  } = useForm<any>();
+
+  // normalize OTP error to avoid runtime crashes when errors.otp has unexpected shape
+  const otpError: string | undefined = (() => {
+    const e = (errors as any)?.otp;
+    if (!e) return undefined;
+    if (typeof e === "string") return e;
+    if (typeof e === "object" && e?.message) return String(e.message);
+    return undefined;
+  })();
+
+  // normalize mobile error for login field `mobilenumber`
+  const mobileError: string | undefined = (() => {
+    const e = (errors as any)?.mobilenumber;
+    if (!e) return undefined;
+    if (typeof e === "string") return e;
+    if (typeof e === "object" && e?.message) return String(e.message);
+    return undefined;
+  })();
 
   const [isOtpSend, setIsOtpSend] = useState(false);
-  const [mobileNumber, setMobileNumber] = useState("");
+  const [mobileNumber, setMobileNumber] = useState(""); // national number
   const [otpMessage, setOtpMessage] = useState("");
   const [resendOTPBody, setResendOTPBody] = useState<any>({});
   const [deviceInfo, setDeviceInfo] = useState({
-    isMobile: null,
+    isMobile: null as boolean | null,
     browserName: "",
     osName: "",
   });
   const [activeTab, setActiveTab] = useState<"login" | "signup">("login");
 
+  const [isLoading, setIsLoading] = useState(false);
+  const [showDeviceLimitModal, setShowDeviceLimitModal] = useState(false);
+  const [token, setToken] = useState<string | null>(null);
+  const [pendingOtp, setPendingOtp] = useState<string | null>(null);
+  const [isShowRestoreModal, setIsShowRestoreModal] = useState(false);
+
   const splitName = (fullName: string) => {
-    const parts = fullName.trim().split(" ");
+    const parts = (fullName || "").trim().split(" ");
     return {
       firstName: parts[0] || "",
       lastName: parts.slice(1).join(" ") || "",
@@ -64,8 +90,8 @@ const AuthDialog = ({ open, onOpenChange, onAuthSuccess }: AuthDialogProps) => {
   useEffect(() => {
     setDeviceInfo({
       isMobile: detectMobile,
-      browserName: detectBrowser,
-      osName: detectOS,
+      browserName: detectBrowser || "",
+      osName: detectOS || "",
     });
   }, []);
 
@@ -74,18 +100,26 @@ const AuthDialog = ({ open, onOpenChange, onAuthSuccess }: AuthDialogProps) => {
   // ======================
   const handleSignup = async (data: any) => {
     try {
+      setIsLoading(true);
       let phoneData;
-      const mobileInput = data.mobile?.toString() || "";
-      if (mobileInput.startsWith("+")) {
-        // international format provided
-        phoneData = parsePhoneNumberWithError(mobileInput);
-      } else {
-        // parse as national number using selected ISO (handles leading 0s)
-        phoneData = parsePhoneNumberWithError(mobileInput, countryISO);
+      const mobileInput = (data.mobile || data.mobilenumber || "").toString();
+      try {
+        if (mobileInput.startsWith("+")) {
+          phoneData = parsePhoneNumberWithError(mobileInput);
+        } else {
+          // try parse as national first
+          phoneData = parsePhoneNumberWithError(mobileInput, countryISO);
+        }
+      } catch (e) {
+        // fallback: try with country dial prefix
+        try {
+          phoneData = parsePhoneNumberWithError(`${countryCode}${mobileInput}`);
+        } catch (e2) {
+          throw new Error("Invalid mobile number");
+        }
       }
-      if (!phoneData) throw new Error("Invalid mobile number");
 
-      const { firstName, lastName } = splitName(data.fullName);
+      const { firstName, lastName } = splitName(data.fullName || "");
 
       const input = {
         firstname: firstName,
@@ -104,10 +138,11 @@ const AuthDialog = ({ open, onOpenChange, onAuthSuccess }: AuthDialogProps) => {
       const res = await registerUser(input);
 
       if (res?.register?.status) {
-        setMobileNumber(res.register.user.mobile_number);
+        setMobileNumber(res.register.user?.mobile_number || phoneData.nationalNumber);
         setIsOtpSend(true);
         setResendOTPBody(body);
         setActiveTab("signup");
+        setOtpMessage(`OTP sent to ${res.register.user?.mobile_number || phoneData.number}`);
 
         toast({
           title: "Success",
@@ -116,105 +151,169 @@ const AuthDialog = ({ open, onOpenChange, onAuthSuccess }: AuthDialogProps) => {
       } else {
         toast({
           title: "Registration Failed",
-          description: res?.register?.message?.error || "Try again.",
+          description: res?.register?.message || "Try again.",
           variant: "destructive",
         });
       }
     } catch (err: any) {
       toast({
         title: "Error",
-        description: err.message || "Something went wrong.",
+        description: err?.message || "Something went wrong.",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // ======================
-  // LOGIN
-  // ======================
-  const handleLogin = async (data: any) => {
-    try {
-      if (!data.mobile) throw new Error("Mobile is required");
-      let phoneData;
-      const mobileInput = data.mobile?.toString() || "";
-      if (mobileInput.startsWith("+")) {
-        phoneData = parsePhoneNumberWithError(mobileInput);
-      } else {
-        phoneData = parsePhoneNumberWithError(mobileInput, countryISO);
-      }
+  // ----------------------
+  // HANDLE LOGIN (SEND OTP)
+  // ----------------------
+// ----------------------
+// HANDLE LOGIN (SEND OTP)
+// ----------------------
+const handleLogin = async (data: any) => {
+  try {
+    setIsLoading(true);
 
-      const body = {
-        mobilenumber: phoneData.nationalNumber,
-        country_code: `+${phoneData.countryCallingCode}`,
+    // VALIDATE MOBILE
+    if (!data.mobilenumber) {
+      toast({
+        title: "Error",
+        description: "Mobile number is required.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // prepare request body
+    const input = {
+      mobilenumber: data.mobilenumber.toString(),
+      country_code: countryCode,       // "+91"
+      device_type: 1,                  // required by API
+    };
+
+    const res = await loginUser(input);
+
+    // ===========================
+    // SUCCESS → SEND OTP
+    // ===========================
+    if (res?.login?.status === true) {
+      const user = res.login.user;
+
+      // Save mobile for OTP verification
+      setMobileNumber(user?.mobile_number || data.mobilenumber);
+
+      // Save resend OTP body (MUST contain country_code)
+      setResendOTPBody({
+        mobilenumber: user?.mobile_number || data.mobilenumber,
+        country_code: countryCode,
         device_type: 1,
-      };
+      });
 
-      const res = await loginUser(body);
+      // UI update
+      setIsOtpSend(true);
 
-      if (res?.login?.status && res?.login?.user) {
-        setMobileNumber(res.login.user.mobile_number);
-        setIsOtpSend(true);
-        setResendOTPBody(body);
-        setActiveTab("login");
-        setOtpMessage(`OTP sent to ${res.login.user.mobile_number}`);
-
-        toast({
-          title: "OTP Sent",
-          description: "Please verify your OTP.",
-        });
-      } else {
-        toast({
-          title: "Not Registered",
-          description: "Firstly register your mobile.",
-          variant: "destructive",
-        });
-        setActiveTab("signup");
-      }
-    } catch (err: any) {
       toast({
-        title: "Error",
-        description: err.message || "Something went wrong.",
+        title: "Success",
+        description: "OTP sent to your mobile.",
+      });
+
+      return;
+    }
+
+    // ===========================
+    // USER NOT REGISTERED
+    // ===========================
+    if (res?.login?.status === false && !res?.login?.user) {
+      toast({
+        title: "User Not Found",
+        description: "Please sign up first.",
         variant: "destructive",
       });
+      return;
     }
-  };
+
+    // ===========================
+    // OTHER FAILURE
+    // ===========================
+    toast({
+      title: "Login Failed",
+      description: res?.login?.message || "Failed to send OTP.",
+      variant: "destructive",
+    });
+
+  } catch (err: any) {
+    toast({
+      title: "Error",
+      description: err.message || "Something went wrong.",
+      variant: "destructive",
+    });
+  } finally {
+    setIsLoading(false);
+  }
+};
+
+
 
   // ======================
   // OTP VERIFICATION
   // ======================
   const verifyOtp = async (data: { otp: string }) => {
     try {
+      if (!data?.otp) {
+        toast({
+          title: "Error",
+          description: "Please enter OTP",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const input = {
         otp: data.otp,
         mobilenumber: mobileNumber,
         device_type: 1,
-        device_name: deviceInfo.osName + " " + deviceInfo.browserName,
+        device_name: `${deviceInfo.osName} ${deviceInfo.browserName}`,
       };
 
+      setIsLoading(true);
       const res = await verifyLoginOtp(input);
 
       if (res?.verifyloginotp?.status) {
-        localStorage.setItem(
-          "auth",
-          JSON.stringify({
-            token: res.verifyloginotp.data.token,
-            user: res.verifyloginotp.data.UserDetails,
-            current_device_token:
-              res.verifyloginotp.data.UserDetails.current_device_token,
-          })
-        );
+        const serverUser = res.verifyloginotp.data.UserDetails || {};
+        const token = res.verifyloginotp.data?.token || null;
+        try {
+          saveServerAuth(serverUser, token, serverUser.current_device_token);
+        } catch (e) {
+          // best-effort fallback: store basic auth
+          try {
+            localStorage.setItem(
+              "auth",
+              JSON.stringify({ token: token, user: serverUser, current_device_token: serverUser.current_device_token })
+            );
+            localStorage.setItem("hillypix-user", JSON.stringify(serverUser));
+          } catch (e2) {
+            // ignore
+          }
+        }
 
-        toast({
-          title: "Success",
-          description: "OTP verified successfully!",
-        });
+        const merged = mergeServerUser(serverUser);
 
-        onAuthSuccess(res.verifyloginotp.data.UserDetails);
-        
+        toast({ title: "Success", description: "OTP verified successfully!" });
+
+        onAuthSuccess(merged);
+
         setTimeout(() => {
           navigate("/");
         }, 500);
         onOpenChange(false);
+      } else if (res?.verifyloginotp?.status === false && res?.verifyloginotp?.show_logout_button === true) {
+        // device limit reached — store token + pending otp and show device-limit modal
+        const fallbackToken = res?.verifyloginotp?.data?.token ?? res?.verifyloginotp?.token ?? null;
+        setToken(fallbackToken);
+        setPendingOtp(data.otp ?? null);
+        setShowDeviceLimitModal(true);
       } else {
         toast({
           title: "OTP Verification Failed",
@@ -225,9 +324,11 @@ const AuthDialog = ({ open, onOpenChange, onAuthSuccess }: AuthDialogProps) => {
     } catch (err: any) {
       toast({
         title: "Error",
-        description: err.message || "Something went wrong.",
+        description: err?.message || "Something went wrong.",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -235,11 +336,23 @@ const AuthDialog = ({ open, onOpenChange, onAuthSuccess }: AuthDialogProps) => {
   // RESEND OTP
   // ======================
   const resendOTP = async () => {
-    if (!resendOTPBody.mobilenumber) return;
+    if (!resendOTPBody?.mobilenumber) {
+      toast({ title: "Error", description: "No mobile available to resend OTP.", variant: "destructive" });
+      return;
+    }
     try {
+      setIsLoading(true);
       const res = await loginUser(resendOTPBody);
       if (res?.login?.status) {
         toast({ title: "OTP Resent", description: "Check your mobile again." });
+        setOtpMessage(`OTP re-sent to ${res.login?.user?.mobile_number || resendOTPBody.mobilenumber}`);
+        setIsOtpSend(true);
+      } else {
+        toast({
+          title: "Error",
+          description: res?.login?.message || "Failed to resend OTP",
+          variant: "destructive",
+        });
       }
     } catch (err) {
       toast({
@@ -247,6 +360,101 @@ const AuthDialog = ({ open, onOpenChange, onAuthSuccess }: AuthDialogProps) => {
         description: "Failed to resend OTP",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // ----------------------
+  // Edit number (allow user to go back and change mobile before verifying)
+  // ----------------------
+  const editNumber = () => {
+    setIsOtpSend(false);
+    setValue("otp", "");
+  };
+
+  // ----------------------
+  // Logout all devices (called when device-limit modal shown)
+  // ----------------------
+  const logoutAllDevices = async () => {
+    if (!token) {
+      toast({ title: "Error", description: "Missing token.", variant: "destructive" });
+      return;
+    }
+    try {
+      setIsLoading(true);
+      // assuming logoutDevice accepts (body, token)
+      const res = await logoutDevice({ logout_all: true }, token);
+      if (res?.logoutDevice?.status === true) {
+        toast({ title: "Success", description: "Logged out from all devices!" });
+        setShowDeviceLimitModal(false);
+
+        // retry verifying OTP with same pending OTP
+        if (pendingOtp) {
+          // call verifyLoginOtp again with the same payload
+          const input = {
+            otp: pendingOtp,
+            mobilenumber: mobileNumber,
+            device_type: 1,
+            device_name: `${deviceInfo.osName} ${deviceInfo.browserName}`,
+          };
+          const retry = await verifyLoginOtp(input);
+          if (retry?.verifyloginotp?.status) {
+            const serverUser = retry.verifyloginotp.data.UserDetails || {};
+            const token = retry.verifyloginotp.data?.token || null;
+            try {
+              saveServerAuth(serverUser, token, serverUser.current_device_token);
+            } catch (e) {
+              try {
+                localStorage.setItem(
+                  "auth",
+                  JSON.stringify({ token: token, user: serverUser, current_device_token: serverUser.current_device_token })
+                );
+                localStorage.setItem("hillypix-user", JSON.stringify(serverUser));
+              } catch (e2) {
+                // ignore
+              }
+            }
+
+            const merged = mergeServerUser(serverUser);
+
+            toast({ title: "Success", description: "OTP verified successfully!" });
+            onAuthSuccess(merged);
+            setTimeout(() => navigate("/"), 400);
+            onOpenChange(false);
+          } else {
+            toast({
+              title: "Error",
+              description: retry?.verifyloginotp?.message || "Failed after logout-all attempt",
+              variant: "destructive",
+            });
+          }
+        }
+      } else {
+        toast({ title: "Error", description: res?.logoutDevice?.message || "Failed to log out all devices.", variant: "destructive" });
+      }
+    } catch (err: any) {
+      toast({ title: "Error", description: err?.message || "Something went wrong.", variant: "destructive" });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+
+  const handleRestore = async () => {
+    // If you have a `restoreUser` GraphQL call, call it here.
+    // I left this as a placeholder - wire to your restoreUser function if available.
+    try {
+      setIsLoading(true);
+      // example:
+      // const res = await restoreUser({ mobile_number: mobileNumber, country_code: ??? });
+      // if success => toast + setIsOtpSend(true)
+      toast({ title: "Info", description: "Restore flow not implemented - wire to your API." });
+      setIsShowRestoreModal(false);
+    } catch (err: any) {
+      toast({ title: "Error", description: err?.message || "Failed to restore.", variant: "destructive" });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -260,14 +468,10 @@ const AuthDialog = ({ open, onOpenChange, onAuthSuccess }: AuthDialogProps) => {
             </div>
             <div>
               <DialogTitle className="text-2xl font-bold">Join HillyPix</DialogTitle>
-              <Badge className="bg-golden/20 text-golden text-xs mt-1">
-                🎭 HillyWood Experience
-              </Badge>
+              <Badge className="bg-golden/20 text-golden text-xs mt-1">🎭 HillyWood Experience</Badge>
             </div>
           </div>
-          <DialogDescription>
-            Access your cultural cinema library and exclusive premieres
-          </DialogDescription>
+          <DialogDescription>Access your cultural cinema library and exclusive premieres</DialogDescription>
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "login" | "signup")}>
@@ -277,23 +481,53 @@ const AuthDialog = ({ open, onOpenChange, onAuthSuccess }: AuthDialogProps) => {
           </TabsList>
 
           <TabsContent value="login">
-            {isOtpSend && activeTab === "login" ? (
+            {isOtpSend ? (
               <div className="bg-white p-6 rounded-lg shadow-md w-full max-w-md mx-auto">
                 <form onSubmit={handleSubmit(verifyOtp)} className="space-y-4">
-                  <p className="text-sm text-gray-700">{otpMessage}</p>
-                  <Input {...register("otp", { required: true, minLength: 6, maxLength: 6 })} placeholder="Enter OTP" maxLength={6} />
-                  <Button type="button" onClick={resendOTP} variant="outline">Resend OTP</Button>
-                  <Button type="submit" className="w-full">Verify OTP</Button>
+                  <p className="text-sm text-gray-700 flex items-center">
+                    <span className="flex-1">{otpMessage}</span>
+                    <button type="button" onClick={editNumber} className="ml-2 text-sm text-indigo-600">
+                      Edit
+                    </button>
+                  </p>
+
+                  <Input
+                    {...register("otp", {
+                      required: "OTP is required",
+                      minLength: { value: 6, message: "OTP must be 6 digits" },
+                      maxLength: { value: 6, message: "OTP must be 6 digits" },
+                      pattern: { value: /^\d+$/, message: "OTP must contain only numbers" },
+                    })}
+                    placeholder="Enter OTP"
+                    maxLength={6}
+                    inputMode="numeric"
+                    autoFocus
+                  />
+                  {otpError && <p className="text-sm text-red-600">{otpError}</p>}
+
+                  <div className="flex items-center justify-between">
+                    <button type="button" onClick={resendOTP} className="text-sm text-indigo-600">
+                      Resend OTP
+                    </button>
+                    <Button type="submit" className="ml-2" disabled={isLoading}>
+                      {isLoading ? "Please wait..." : "Verify OTP"}
+                    </Button>
+                  </div>
                 </form>
               </div>
             ) : (
               <form onSubmit={handleSubmit(handleLogin)} className="space-y-4">
                 <Label>Mobile</Label>
                 <div className="flex space-x-2">
-                  <CountrySelect value={countryCode} onChange={(val) => setCountryCode(val)} onCountryChange={(iso) => setCountryISO(iso as any)} />
-                  <Input className="flex-1" {...register("mobile")} placeholder="Enter mobile number" />
+                  <div className="w-36">
+                    <CountrySelect value={countryCode} onChange={(val) => setCountryCode(val)} onCountryChange={(iso) => setCountryISO(iso as any)} />
+                  </div>
+                  <Input className="flex-1" {...register("mobilenumber", { required: "Mobile is required" })} placeholder="Enter mobile number" />
                 </div>
-                <Button type="submit" className="w-full">Sign In</Button>
+                {mobileError && <p className="text-sm text-red-600">{mobileError}</p>}
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? "Sending OTP..." : "Sign In"}
+                </Button>
               </form>
             )}
           </TabsContent>
@@ -304,14 +538,20 @@ const AuthDialog = ({ open, onOpenChange, onAuthSuccess }: AuthDialogProps) => {
                 <form onSubmit={handleSubmit(verifyOtp)} className="space-y-4">
                   <p className="text-sm text-gray-700">{otpMessage}</p>
                   <Input {...register("otp", { required: true, minLength: 6, maxLength: 6 })} placeholder="Enter OTP" maxLength={6} />
-                  <Button type="button" onClick={resendOTP} variant="outline">Resend OTP</Button>
-                  <Button type="submit" className="w-full">Verify OTP</Button>
+                  <div className="flex gap-2">
+                    <Button type="button" onClick={resendOTP} variant="outline">
+                      Resend OTP
+                    </Button>
+                    <Button type="submit" className="w-full">
+                      Verify OTP
+                    </Button>
+                  </div>
                 </form>
               </div>
             ) : (
               <form onSubmit={handleSubmit(handleSignup)} className="space-y-4">
                 <Label>Full Name</Label>
-                <Input {...register("fullName")} placeholder="Full Name"/>
+                <Input {...register("fullName")} placeholder="Full Name" />
                 <Label>Email</Label>
                 <Input {...register("email")} type="email" placeholder="Enter Email" />
                 <Label>Mobile</Label>
@@ -319,7 +559,9 @@ const AuthDialog = ({ open, onOpenChange, onAuthSuccess }: AuthDialogProps) => {
                   <CountrySelect value={countryCode} onChange={(val) => setCountryCode(val)} onCountryChange={(iso) => setCountryISO(iso as any)} />
                   <Input className="flex-1" {...register("mobile")} placeholder="Enter Mobile Number" />
                 </div>
-                <Button type="submit" className="w-full">Create Account</Button>
+                <Button type="submit" className="w-full">
+                  Create Account
+                </Button>
               </form>
             )}
           </TabsContent>
@@ -333,8 +575,42 @@ const AuthDialog = ({ open, onOpenChange, onAuthSuccess }: AuthDialogProps) => {
           <p className="text-xs italic">“Every story preserves our heritage…”</p>
         </div>
       </DialogContent>
+
+      {/* Device limit modal */}
+      <Dialog open={showDeviceLimitModal} onOpenChange={(v) => setShowDeviceLimitModal(v)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Device Limit Reached</DialogTitle>
+            <DialogDescription>You have reached the maximum number of allowed devices. Logout from all other devices to continue.</DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-3 mt-4">
+            <Button variant="secondary" onClick={() => setShowDeviceLimitModal(false)}>Cancel</Button>
+            <Button variant="destructive" onClick={logoutAllDevices} disabled={isLoading}>
+              {isLoading ? "Please wait..." : "Logout All"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Restore account modal */}
+      <Dialog open={isShowRestoreModal} onOpenChange={(v) => setIsShowRestoreModal(v)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Restore Account</DialogTitle>
+            <DialogDescription>Your account appears to be inactive. Would you like to restore it?</DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-start gap-3 pt-3">
+            <Button variant="secondary" onClick={() => setIsShowRestoreModal(false)}>No</Button>
+            <Button onClick={handleRestore}>Yes</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 };
 
 export default AuthDialog;
+function setShowSignup(arg0: boolean) {
+  throw new Error("Function not implemented.");
+}
+
