@@ -16,6 +16,9 @@ import moviePoster4 from '@/assets/movie-poster-4.jpg';
 import moviePoster5 from '@/assets/movie-poster-5.jpg';
 import moviePoster6 from '@/assets/movie-poster-6.jpg';
 import Api from "@/api/serverApi";
+import { useNavigate } from "react-router-dom";
+import TicketPurchaseDialog from '../components/TicketPurchaseDialog';
+
 
 
 const musicVideos = [
@@ -78,6 +81,9 @@ const [movies, setMovies] = useState([]);
 const [languages, setLanguages] = useState([]);
 const [selectedLanguage, setSelectedLanguage] = useState("All");
 const [selectedGenre, setSelectedGenre] = useState("");
+const navigate = useNavigate();
+const [selectedMovie, setSelectedMovie] = useState<any>(null);
+const [isTicketDialogOpen, setIsTicketDialogOpen] = useState(false);
 
   const handleWatchlistToggle = (video: any, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -99,17 +105,30 @@ const [selectedGenre, setSelectedGenre] = useState("");
   };
 
   const handlePlayVideo = (video: any) => {
-    if (video.getpayperwatch==null) {
-      toast({
-        title: "Playing Music Video",
-        description: `Enjoy ${video?.title} by ${video?.director} (Ad-supported)`,
-      });
-    } else {
-      toast({
-        title: "Premium Content",
-        description: `Buy ${video?.title} for ₹${video?.getpayperwatch?.amount} to watch without ads.`,
-      });
-    }
+
+      const videos=video;
+
+      // navigate("/watch", { state: { videos } });
+
+      navigate("/details", { state: { videos } });
+
+    // if (video.getpayperwatch==null) {
+    //   toast({
+    //     title: "Playing Music Video",
+    //     description: `Enjoy ${video?.title} by ${video?.director} (Ad-supported)`,
+    //   });
+    // } else {
+    //   toast({
+    //     title: "Premium Content",
+    //     description: `Buy ${video?.title} for ₹${video?.getpayperwatch?.amount} to watch without ads.`,
+    //   });
+    // }
+  };
+
+  
+  const handleBuyTicket = (movie: any) => {
+    setSelectedMovie(movie);
+    setIsTicketDialogOpen(true);
   };
 
   const handleLike = (video: any) => {
@@ -189,6 +208,14 @@ const handleLanguageChange = (lang) => {
     setMovies(data?.data || []);
   });
 };
+
+
+ const handlePlay = (movie) => 
+  {
+    const videos=movie?.videos[0];
+
+      navigate("/watch", { state: { videos } });
+  };
 
 
   return (
@@ -359,14 +386,19 @@ const handleLanguageChange = (lang) => {
 
                           {/* Actions */}
                           <div className="flex gap-2">
-                            <Button 
-                              size="sm" 
+                           <Button
+                              size="sm"
                               className="flex-1 bg-golden text-black hover:bg-golden/90"
-                              onClick={() => handlePlayVideo(video)}
+                              onClick={() =>
+                                video.is_title_rent_by_user == 1
+                                  ? handlePlayVideo(video)
+                                  : handleBuyTicket(video)
+                              }
                             >
                               <Play className="w-3 h-3 mr-1" />
-                              {video.getpayperwatch ==null ? 'Watch' : 'Buy'}
+                              {video.getpayperwatch == null ? "Watch" : "Buy"}
                             </Button>
+
                             <Button 
                               size="sm" 
                               variant="outline"
@@ -396,6 +428,8 @@ const handleLanguageChange = (lang) => {
           </div>
         </section>
       </main>
+
+       {selectedMovie && <TicketPurchaseDialog open={isTicketDialogOpen} onOpenChange={setIsTicketDialogOpen} movie={selectedMovie} />}
 
       {/* Footer */}
       <Footer />
