@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState,useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -6,6 +6,20 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { Ticket, Star, Clock, MapPin, CreditCard, Users, Calendar, Check } from 'lucide-react';
+
+function loadScript(src) {
+  return new Promise((resolve) => {
+    const script = document.createElement("script");
+    script.src = src;
+    script.onload = () => {
+      resolve(true);
+    };
+    script.onerror = () => {
+      resolve(false);
+    };
+    document.body.appendChild(script);
+  });
+}
 
 interface TicketPurchaseDialogProps {
   open: boolean;
@@ -17,6 +31,11 @@ interface TicketPurchaseDialogProps {
     duration: string;
     language: string;
     state: string;
+    tv_portrait_image: string;
+    tv_banner: string;
+    tv_landscape_image: string;
+    rating_avg:string;
+    runtime:string
   };
 }
 
@@ -74,6 +93,19 @@ const TicketPurchaseDialog = ({ open, onOpenChange, movie }: TicketPurchaseDialo
     onOpenChange(false);
   };
 
+  
+  useEffect(() => {
+    const ressdkss = loadScript("https://checkout.razorpay.com/v1/checkout.js");
+    if (!ressdkss) {
+        alert("Razorpay SDK failed to load. Are you online?");
+        return;
+    } else {
+        console.log("Confirm this");
+    }
+  });
+
+
+
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-card-accent/95 backdrop-blur-md border border-border/30">
@@ -101,7 +133,7 @@ const TicketPurchaseDialog = ({ open, onOpenChange, movie }: TicketPurchaseDialo
         {/* Movie Info Bar */}
         <div className="flex items-center space-x-4 p-4 bg-background/30 rounded-lg mb-6">
           <img 
-            src={movie.poster} 
+            src={movie?.tv_portrait_image || movie?.tv_banner || movie?.tv_landscape_image} 
             alt={movie.title}
             className="w-16 h-24 object-cover rounded"
           />
@@ -110,19 +142,19 @@ const TicketPurchaseDialog = ({ open, onOpenChange, movie }: TicketPurchaseDialo
             <div className="flex items-center space-x-4 text-sm text-muted-foreground mt-1">
               <div className="flex items-center">
                 <Star className="w-3 h-3 text-golden mr-1" />
-                {movie.rating}
+                {movie?.rating_avg}
               </div>
               <div className="flex items-center">
                 <Clock className="w-3 h-3 mr-1" />
-                {movie.duration}
+                {movie?.runtime}
               </div>
-              <div className="flex items-center">
+              {/* <div className="flex items-center">
                 <MapPin className="w-3 h-3 mr-1" />
                 {movie.state}
-              </div>
+              </div> */}
             </div>
             <Badge variant="secondary" className="mt-2 text-xs">
-              {movie.language}
+              {movie?.language}
             </Badge>
           </div>
         </div>
@@ -130,9 +162,9 @@ const TicketPurchaseDialog = ({ open, onOpenChange, movie }: TicketPurchaseDialo
         {/* Step 1: Ticket Selection */}
         {step === 1 && (
           <div className="space-y-6">
-            <h3 className="text-lg font-semibold text-foreground">Choose Your Experience</h3>
+            {/* <h3 className="text-lg font-semibold text-foreground">Choose Your Experience</h3> */}
             
-            <div className="grid gap-4">
+            {/* <div className="grid gap-4">
               {ticketTypes.map((ticket) => (
                 <Card 
                   key={ticket.id}
@@ -176,7 +208,7 @@ const TicketPurchaseDialog = ({ open, onOpenChange, movie }: TicketPurchaseDialo
                   </CardContent>
                 </Card>
               ))}
-            </div>
+            </div> */}
 
             <div className="flex gap-3 pt-4">
               <Button

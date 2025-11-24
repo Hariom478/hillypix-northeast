@@ -199,8 +199,10 @@ const TVSeries = () => {
   };
 
   const handleBuySeries = (series: any) => {
-    setSelectedSeries(series);
-    setIsTicketDialogOpen(true);
+    const videos=series;
+    navigate("/details", { state: { videos } });
+    // setSelectedSeries(series);
+    // setIsTicketDialogOpen(true);
   };
 
   const handlePlayEpisode = (series: any, episode: any) => {
@@ -230,9 +232,6 @@ const TVSeries = () => {
     getHomePage(71,'tvSeries').then(data => {
   
      const fetchedLists = data?.getHomePage?.data?.list || [];
-
-     console.log("fetchedLists fetchedLists",fetchedLists);
-
       const filteredLists = fetchedLists.filter(list =>
         list.listable?.some(item => item?.title)
       );
@@ -476,8 +475,8 @@ const TVSeries = () => {
                   {series?.seasons?.map((season, sIndex) => (
                     <div key={sIndex}>
                       <h3 className="text-lg font-semibold text-golden mb-3">
-                        Season {sIndex + 1}
-                      </h3>
+                        Season {sIndex + 1}   
+                      </h3> 
 
                       <div className="space-y-2">
                         {season?.episodes?.map((episode) => {
@@ -549,12 +548,17 @@ const TVSeries = () => {
             open={isTicketDialogOpen}
             onOpenChange={setIsTicketDialogOpen}
             movie={{
-              title: selectedSeries.title,
-              poster: selectedSeries.poster,
-              rating: selectedSeries.rating,
-              duration: `${selectedSeries.totalEpisodes} Episodes`,
-              language: selectedSeries.language,
-              state: selectedSeries.state
+              title: selectedSeries?.title,
+              poster: selectedSeries?.poster,
+              rating: selectedSeries?.rating,
+              duration: `${selectedSeries?.total_episode_count} Episodes`,
+              language: selectedSeries?.language,
+              state: selectedSeries?.state,
+              tv_portrait_image: selectedSeries?.tv_portrait_image,
+              tv_banner:selectedSeries?.tv_banner,
+              tv_landscape_image: selectedSeries?.tv_landscape_image,
+              rating_avg:selectedSeries?.rating_avg,
+              runtime:selectedSeries?.runtime
             }}
           />
         )}

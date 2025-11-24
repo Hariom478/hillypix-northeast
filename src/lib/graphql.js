@@ -90,6 +90,7 @@ export async function getHomePage(user_id,type=null) {
                 runtime
                 slug
                 is_title_rent_by_user
+                videos { id name thumbnail url type quality title_id language runtime advertisement_video is_paid category }
                 getpayperwatch {
                     id
                     title_id

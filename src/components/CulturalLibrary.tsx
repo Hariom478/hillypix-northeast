@@ -15,6 +15,7 @@ import moviePoster4 from '@/assets/movie-poster-4.jpg';
 import moviePoster5 from '@/assets/movie-poster-5.jpg';
 import moviePoster6 from '@/assets/movie-poster-6.jpg';
 import { getHomePage } from "@/lib/graphql";
+import { useNavigate } from "react-router-dom";
 
 const genres = [{
   id: 'all',
@@ -69,206 +70,6 @@ const categories = [{
   icon: '📚'
 }];
 
-//   id: 1,
-//   title: 'Ka Jainsen',
-//   genre: 'drama',
-//   category: 'traditional',
-//   poster: moviePoster1,
-//   rating: 4.8,
-//   year: 2023,
-//   language: 'Khasi',
-//   duration: '2h 15m',
-//   owned: true
-// }, {
-//   id: 2,
-//   title: 'Naga Rangtsa',
-//   genre: 'action',
-//   category: 'traditional',
-//   poster: moviePoster2,
-//   rating: 4.9,
-//   year: 2023,
-//   language: 'Ao Naga',
-//   duration: '2h 05m',
-//   owned: false
-// }, {
-//   id: 3,
-//   title: 'Puanchei',
-//   genre: 'romance',
-//   category: 'traditional',
-//   poster: moviePoster3,
-//   rating: 4.7,
-//   year: 2023,
-//   language: 'Mizo',
-//   duration: '1h 58m',
-//   owned: true
-// }, {
-//   id: 4,
-//   title: 'Himalayan Dreams',
-//   genre: 'drama',
-//   category: 'modern',
-//   poster: moviePoster4,
-//   rating: 4.5,
-//   year: 2024,
-//   language: 'Nepali',
-//   duration: '2h 10m',
-//   owned: false
-// }, {
-//   id: 5,
-//   title: 'Gamosa Tales',
-//   genre: 'comedy',
-//   category: 'modern',
-//   poster: moviePoster5,
-//   rating: 4.6,
-//   year: 2024,
-//   language: 'Assamese',
-//   duration: '1h 55m',
-//   owned: true
-// }, {
-//   id: 6,
-//   title: 'Raas Leela',
-//   genre: 'drama',
-//   category: 'folk',
-//   poster: moviePoster6,
-//   rating: 4.8,
-//   year: 2023,
-//   language: 'Manipuri',
-//   duration: '2h 20m',
-//   owned: false
-// },
-// // Additional movies for "Load More" functionality
-// {
-//   id: 7,
-//   title: 'Weaver\'s Song',
-//   genre: 'romance',
-//   category: 'traditional',
-//   poster: moviePoster1,
-//   rating: 4.4,
-//   year: 2023,
-//   language: 'Kokborok',
-//   duration: '1h 45m',
-//   owned: false
-// }, {
-//   id: 8,
-//   title: 'Mountain Echoes',
-//   genre: 'horror',
-//   category: 'traditional',
-//   poster: moviePoster2,
-//   rating: 4.6,
-//   year: 2024,
-//   language: 'Nyishi',
-//   duration: '2h 12m',
-//   owned: true
-// }, {
-//   id: 9,
-//   title: 'Digital Village',
-//   genre: 'comedy',
-//   category: 'modern',
-//   poster: moviePoster3,
-//   rating: 4.3,
-//   year: 2024,
-//   language: 'Assamese',
-//   duration: '1h 48m',
-//   owned: false
-// }, {
-//   id: 10,
-//   title: 'Urban Legends',
-//   genre: 'horror',
-//   category: 'modern',
-//   poster: moviePoster4,
-//   rating: 4.7,
-//   year: 2024,
-//   language: 'Manipuri',
-//   duration: '2h 05m',
-//   owned: true
-// }, {
-//   id: 11,
-//   title: 'Tech Dreams',
-//   genre: 'action',
-//   category: 'modern',
-//   poster: moviePoster5,
-//   rating: 4.2,
-//   year: 2024,
-//   language: 'Nepali',
-//   duration: '1h 52m',
-//   owned: false
-// }, {
-//   id: 12,
-//   title: 'Sacred Groves',
-//   genre: 'biopic',
-//   category: 'documentary',
-//   poster: moviePoster6,
-//   rating: 4.9,
-//   year: 2023,
-//   language: 'Khasi',
-//   duration: '1h 38m',
-//   owned: true
-// }, {
-//   id: 13,
-//   title: 'Hunter\'s Tale',
-//   genre: 'action',
-//   category: 'folk',
-//   poster: moviePoster1,
-//   rating: 4.5,
-//   year: 2023,
-//   language: 'Sema Naga',
-//   duration: '1h 55m',
-//   owned: false
-// }, {
-//   id: 14,
-//   title: 'Bamboo Forest',
-//   genre: 'biopic',
-//   category: 'documentary',
-//   poster: moviePoster2,
-//   rating: 4.6,
-//   year: 2024,
-//   language: 'Mizo',
-//   duration: '1h 42m',
-//   owned: true
-// }, {
-//   id: 15,
-//   title: 'Royal Heritage',
-//   genre: 'drama',
-//   category: 'documentary',
-//   poster: moviePoster3,
-//   rating: 4.4,
-//   year: 2023,
-//   language: 'Bengali',
-//   duration: '2h 15m',
-//   owned: false
-// }, {
-//   id: 16,
-//   title: 'Spirit Dance',
-//   genre: 'horror',
-//   category: 'folk',
-//   poster: moviePoster4,
-//   rating: 4.8,
-//   year: 2024,
-//   language: 'Apatani',
-//   duration: '1h 48m',
-//   owned: true
-// }, {
-//   id: 17,
-//   title: 'City Lights',
-//   genre: 'romance',
-//   category: 'modern',
-//   poster: moviePoster5,
-//   rating: 4.1,
-//   year: 2024,
-//   language: 'Assamese',
-//   duration: '1h 58m',
-//   owned: false
-// }, {
-//   id: 18,
-//   title: 'Love in Hills',
-//   genre: 'romance',
-//   category: 'modern',
-//   poster: moviePoster6,
-//   rating: 4.5,
-//   year: 2024,
-//   language: 'Nepali',
-//   duration: '2h 08m',
-//   owned: true
-// }];
 const CulturalLibrary =  () => {
   const [selectedGenre, setSelectedGenre] = useState('all');
   const [selectedCategory, setSelectedCategory] = useState('traditional');
@@ -281,6 +82,7 @@ const [lists, setLists] = useState([]);
 const [selectedListId, setSelectedListId] = useState(null);
 const [movies, setMovies] = useState([]);
 const [allMovies, setAllMovies] = useState([]);
+const navigate = useNavigate();
 
 
   const {
@@ -364,8 +166,10 @@ useEffect(() => {
 
 
 
-   const handlePlay = (movie) => {
-      alert(movie);
+   const handlePlay = (movie) => 
+  {
+      const videos=movie;
+      navigate("/details", { state: { videos } });
   };
 
   // Reset visible movies when filters change
@@ -517,7 +321,7 @@ const handleGenreChange = (id) => {
                     <Button
                       size="lg"
                       className={movie?.is_title_rent_by_user==1 ? "bg-golden text-black" : "theatre-gradient text-white"}
-                      onClick={() => movie?.is_title_rent_by_user ? handlePlay(movie) : handleBuyTicket(movie)}
+                      onClick={() => movie?.is_title_rent_by_user==1 ? handlePlay(movie) : handleBuyTicket(movie)}
                     >
                       ▶ {movie?.is_title_rent_by_user == 1 
                             ? "Watch" 
