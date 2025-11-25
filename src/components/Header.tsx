@@ -461,12 +461,12 @@ const Header = () => {
                             <div className="flex items-center gap-2 mt-1">
                               <span className="text-xs text-muted-foreground">{item.genre}</span>
                               <span className="text-xs text-muted-foreground">•</span>
-                              <span className="text-xs text-muted-foreground">{item.year}</span>
-                              <span className="text-xs text-muted-foreground">•</span>
-                              <span className="flex items-center gap-1 text-xs text-golden">
+                              {/* <span className="text-xs text-muted-foreground">{item.year}</span>
+                              <span className="text-xs text-muted-foreground">•</span> */}
+                              {/* <span className="flex items-center gap-1 text-xs text-golden">
                                 <Star className="w-3 h-3 fill-golden" />
                                 {item.rating}
-                              </span>
+                              </span> */}
                             </div>
                           </div>
                         </CommandItem>

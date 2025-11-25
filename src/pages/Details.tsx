@@ -32,6 +32,8 @@ const reviews = [
   },
 ];
 
+
+
 type Card = {
   id: number;
   title: string;

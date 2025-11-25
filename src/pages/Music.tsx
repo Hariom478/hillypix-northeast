@@ -90,6 +90,13 @@ const [isTicketDialogOpen, setIsTicketDialogOpen] = useState(false);
 
 
 
+
+
+
+
+
+
+
   const handleWatchlistToggle = (video: any, e: React.MouseEvent) => {
 
     if (!user) {
@@ -164,7 +171,8 @@ const [isTicketDialogOpen, setIsTicketDialogOpen] = useState(false);
   
   const handleBuyTicket = (movie: any) => {
     setSelectedMovie(movie);
-    setIsTicketDialogOpen(true);
+    // setIsTicketDialogOpen(true);
+    navigate("/details", { state: { videos: movie } });
   };
 
   const handleLike = (video: any) => {
