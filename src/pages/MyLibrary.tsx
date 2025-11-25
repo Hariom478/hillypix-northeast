@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState,useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,8 @@ import Footer from '@/components/Footer';
 import moviePoster1 from '@/assets/movie-poster-1.jpg';
 import moviePoster3 from '@/assets/movie-poster-3.jpg';
 import moviePoster5 from '@/assets/movie-poster-5.jpg';
+import { getWatchListData } from "@/lib/graphql";
+import { getUser } from "@/lib/localAuth"; 
 
 const myMovies = [
   {
@@ -50,18 +52,38 @@ const myMovies = [
 ];
 
 const MyLibrary = () => {
-  const [selectedTab, setSelectedTab] = useState('owned');
-  const { watchlist, removeFromWatchlist } = useWatchlist();
+  const user = getUser();
+  const [selectedTab, setSelectedTab] = useState('watchlist');
+  const { watchlist, removeFromWatchlist } = useWatchlist(user?.id);
+  const [ myMovies , setMyMovies] =useState([]);
+  const [newwatchlist, setNewWatchList] = useState([]);
+  // const { myMovies, setMyMovies} = useState([]);
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const handleRemoveFromWatchlist = (id: number, title: string) => {
-    removeFromWatchlist(id);
-    toast({
-      title: "Removed from Watchlist",
-      description: `${title} has been removed from your watchlist.`,
-    });
-  };
+  const handleRemoveFromWatchlist = async (id: number, title) => {
+  await removeFromWatchlist(id);
+
+  // Re-fetch updated watchlist
+  const updated = await getWatchListData(Number(user?.id), null);
+  const fetchedLists = updated?.getWatchList?.data || [];
+
+  setNewWatchList(fetchedLists);
+
+  toast({
+    title: "Removed from Watchlist",
+    description: `${title?.title} has been removed from your watchlist.`,
+  });
+};
+
+
+  useEffect(() => {
+  getWatchListData(Number(user?.id),null).then(data => {
+        const fetchedLists = data?.getWatchList?.data || [];
+
+        setNewWatchList(fetchedLists);
+  });
+}, []);
 
   const handleBrowseLibrary = () => {
     navigate('/');
@@ -72,6 +94,12 @@ const MyLibrary = () => {
       }
     }, 100);
   };
+
+   const handleClick = (movies) => {
+    const videos=movies?.title;
+    navigate("/details", { state: { videos } }); // <-- change path if needed
+  };
+  
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-card-accent/20">
@@ -102,15 +130,15 @@ const MyLibrary = () => {
           <div className="container mx-auto">
             <Tabs value={selectedTab} onValueChange={setSelectedTab} className="mb-8">
               <TabsList className="grid w-full max-w-md mx-auto grid-cols-3 bg-card-accent/50">
-                <TabsTrigger value="owned" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                {/* <TabsTrigger value="owned" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                   Owned ({myMovies.length})
-                </TabsTrigger>
+                </TabsTrigger> */}
                 <TabsTrigger value="watchlist" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                  Watchlist ({watchlist.length})
+                  Watchlist ({newwatchlist.length})
                 </TabsTrigger>
-                <TabsTrigger value="bundles" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                {/* <TabsTrigger value="bundles" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                   Bundles (1)
-                </TabsTrigger>
+                </TabsTrigger> */}
               </TabsList>
 
               <TabsContent value="owned" className="mt-8">
@@ -175,7 +203,7 @@ const MyLibrary = () => {
               </TabsContent>
 
               <TabsContent value="watchlist" className="mt-8">
-                {watchlist.length === 0 ? (
+                {newwatchlist.length === 0 ? (
                   <div className="text-center py-12">
                     <p className="text-muted-foreground">Your watchlist is empty. Start exploring our library to add films!</p>
                     <Button 
@@ -187,13 +215,16 @@ const MyLibrary = () => {
                   </div>
                 ) : (
                   <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {watchlist.map((movie) => (
+                    {newwatchlist.map((movie) => (
                       <Card key={movie.id} className="group bg-card-accent/30 border-border/20 hover:border-golden/30 theatre-transition overflow-hidden">
                         <CardContent className="p-0">
-                          <div className="relative overflow-hidden">
+                          <div className="relative overflow-hidden"
+                          
+                             onClick={() => handleClick(movie)}
+                          >
                             <img 
-                              src={movie.poster} 
-                              alt={movie.title}
+                              src={movie?.title?.app_list_image} 
+                              alt={movie?.title?.title}
                               className="w-full h-64 object-cover group-hover:scale-105 theatre-transition"
                             />
                             
@@ -203,33 +234,34 @@ const MyLibrary = () => {
                               </Badge>
                               <div className="flex items-center space-x-1 bg-black/60 backdrop-blur-sm px-2 py-1 rounded-full">
                                 <Star className="w-3 h-3 text-golden fill-current" />
-                                <span className="text-xs text-white font-medium">{movie.rating}</span>
+                                <span className="text-xs text-white font-medium">{movie?.rating}</span>
                               </div>
                             </div>
 
+                            
                             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 theatre-transition flex items-center justify-center">
                               <Button size="lg" className="theatre-gradient text-white">
                                 <Play className="w-4 h-4 mr-2" />
-                                Buy Ticket
+                                 {movie?.title?.getpayperwatch == null ? "Play" : "Buy Ticket"}
                               </Button>
                             </div>
                           </div>
 
                           <div className="p-4">
-                            <h3 className="font-bold text-foreground mb-1 line-clamp-1">{movie.title}</h3>
+                            <h3 className="font-bold text-foreground mb-1 line-clamp-1">{movie?.title?.title}</h3>
                             <p className="text-xs text-muted-foreground mb-2">
-                              {movie.language} • {movie.duration}
+                              {movie?.title?.language} • {movie?.title?.runtime}
                             </p>
                             <div className="flex items-center justify-between mb-2">
                               <Badge variant="secondary" className="text-xs">
-                                {movie.genre}
+                                {movie?.title?.genres}
                               </Badge>
                             </div>
                             <Button
                               size="sm"
                               variant="outline"
                               className="w-full text-xs border-destructive/30 text-destructive hover:bg-destructive/10"
-                              onClick={() => handleRemoveFromWatchlist(movie.id, movie.title)}
+                              onClick={() => handleRemoveFromWatchlist(movie.title_id, movie.title)}
                             >
                               <Trash2 className="w-3 h-3 mr-1" />
                               Remove

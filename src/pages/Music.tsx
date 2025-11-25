@@ -18,6 +18,8 @@ import moviePoster6 from '@/assets/movie-poster-6.jpg';
 import Api from "@/api/serverApi";
 import { useNavigate } from "react-router-dom";
 import TicketPurchaseDialog from '../components/TicketPurchaseDialog';
+// import { useAuth } from "@/context/AuthProvider";
+import { getUser } from "@/lib/localAuth";
 
 
 
@@ -70,11 +72,12 @@ const states = [
 ];
 
 const Music = () => {
+   const user = getUser();
   const [selectedTab, setSelectedTab] = useState('trending');
   const [selectedState, setSelectedState] = useState('all');
   const { toast } = useToast();
   const isMobile = useIsMobile();
-  const { addToWatchlist, removeFromWatchlist, isInWatchlist } = useWatchlist(71,'music');
+  const { addToWatchlist, removeFromWatchlist, isInWatchlist } = useWatchlist(user?.id,'music');
 
 
 const [movies, setMovies] = useState([]);
@@ -85,23 +88,56 @@ const navigate = useNavigate();
 const [selectedMovie, setSelectedMovie] = useState<any>(null);
 const [isTicketDialogOpen, setIsTicketDialogOpen] = useState(false);
 
+
+
   const handleWatchlistToggle = (video: any, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (isInWatchlist(video.id)) {
-      removeFromWatchlist(video?.id);
-      toast({
-        title: "Removed from Watchlist",
-        description: `${video.title} has been removed from your watchlist.`,
-      });
-      fetchData(71,selectedLanguage);
-    } else {
-      addToWatchlist(video);
-      toast({
-        title: "Added to Watchlist",
-        description: `${video.title} has been added to your watchlist.`,
-      });
-      fetchData(71,selectedLanguage);
+
+    if (!user) {
+      toast({ title: "Login Required", description: "Please login first." });
+      navigate("/login");
+      return;
     }
+
+    const updatedWatchStatus = video.is_watchlist == 1 ? 0 : 1;
+
+      // 🔥 Update local UI immediately
+      setMovies(prev =>
+        prev.map(item =>
+          item.id === video.id ? { ...item, is_watchlist: updatedWatchStatus } : item
+        )
+      );
+
+      // Backend call (optional)
+      if (updatedWatchStatus === 1) {
+        addToWatchlist(video);
+        toast({
+          title: "Added to Watchlist",
+          description: `${video.title} added to your watchlist.`,
+        });
+      } else {
+        removeFromWatchlist(video.id);
+        toast({
+          title: "Removed from Watchlist",
+          description: `${video.title} removed from your watchlist.`,
+        });
+      }
+
+    // e.stopPropagation();
+    // if (video?.is_watchlist) {
+    //   removeFromWatchlist(video?.id);
+    //   toast({
+    //     title: "Removed from Watchlist",
+    //     description: `${video.title} has been removed from your watchlist.`,
+    //   });
+    //   fetchData(user?.id,selectedLanguage);
+    // } else {
+    //   addToWatchlist(video);
+    //   toast({
+    //     title: "Added to Watchlist",
+    //     description: `${video.title} has been added to your watchlist.`,
+    //   });
+    //   fetchData(user?.id,selectedLanguage);
+    // }
   };
 
   const handlePlayVideo = (video: any) => {
@@ -192,7 +228,7 @@ const fetchData = async (lang, user_id) => {
 
 useEffect(() => {
   // Initial fetch
-  fetchData("All", '71').then(data => {
+  fetchData("All", user?.id).then(data => {
 
     setMovies(data?.data || []);
 
@@ -204,7 +240,7 @@ useEffect(() => {
 
 const handleLanguageChange = (lang) => {
   setSelectedLanguage(lang);
-  fetchData(lang,'71').then(data => {
+  fetchData(lang,user?.id).then(data => {
     setMovies(data?.data || []);
   });
 };
@@ -399,7 +435,7 @@ const handleLanguageChange = (lang) => {
                               {video.getpayperwatch == null ? "Watch" : "Buy"}
                             </Button>
 
-                            <Button 
+                            {/* <Button 
                               size="sm" 
                               variant="outline"
                               className="border-golden/30"
@@ -410,7 +446,24 @@ const handleLanguageChange = (lang) => {
                               ) : (
                                 <BookmarkPlus className="w-3 h-3" />
                               )}
+                            </Button> */}
+
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className={`border-golden/30 transition ${
+                                video?.is_watchlist == 1 ? "bg-golden/10" : ""
+                              }`}
+                              onClick={(e) => handleWatchlistToggle(video, e)}
+                            >
+                              {video?.is_watchlist == 1 ? (
+                                <BookmarkCheck className="w-3 h-3 text-golden" />
+                              ) : (
+                                <BookmarkPlus className="w-3 h-3" />
+                              )}
                             </Button>
+
+
                           </div>
                         </>
                       )}

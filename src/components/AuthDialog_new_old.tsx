@@ -280,8 +280,8 @@ const handleLogin = async (data: any) => {
 
       setIsLoading(true);
       const res = await verifyLoginOtp(input);
+
       if (res?.verifyloginotp?.status) {
-        
         const serverUser = res.verifyloginotp.data.UserDetails || {};
         const token = res.verifyloginotp.data?.token || null;
         try {
@@ -289,13 +289,11 @@ const handleLogin = async (data: any) => {
         } catch (e) {
           // best-effort fallback: store basic auth
           try {
-
             localStorage.setItem(
               "auth",
               JSON.stringify({ token: token, user: serverUser, current_device_token: serverUser.current_device_token })
             );
             localStorage.setItem("hillypix-user", JSON.stringify(serverUser));
-
           } catch (e2) {
             // ignore
           }

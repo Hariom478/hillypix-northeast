@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState,useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -13,6 +13,7 @@ import moviePoster3 from '@/assets/movie-poster-3.jpg';
 import moviePoster4 from '@/assets/movie-poster-4.jpg';
 import moviePoster5 from '@/assets/movie-poster-5.jpg';
 import moviePoster6 from '@/assets/movie-poster-6.jpg';
+import Api from "@/api/serverApi";
 
 const premieres = [{
   id: 1,
@@ -57,11 +58,39 @@ const premieres = [{
 const NowPremiering = () => {
   const [selectedMovie, setSelectedMovie] = useState<any>(null);
   const [isTicketDialogOpen, setIsTicketDialogOpen] = useState(false);
+  const [premieres, setPremieres]= useState([]);
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const {
     toast
   } = useToast();
+
+
+  const WeekPremier = async (type, user_id) => {
+    const body = {
+      type: type,
+      user_id: user_id,
+    };
+  
+    const res = await Api("/premier_week", "POST", body, undefined, { cache: "no-store" });
+    const data = await res.json();
+    console.log("Every Time Data Render ", data);
+    return data;
+  };
+
+
+ useEffect(() => {
+  const fetchData = async () => {
+    const data = await WeekPremier("all", 71);
+    console.log("Fetched Data:", data);
+    setPremieres(data?.data || []);
+  };
+
+  fetchData();
+}, []);
+
+
+
   const handleBuyTicket = (movie: any) => {
     setSelectedMovie(movie);
     setIsTicketDialogOpen(true);
@@ -106,20 +135,20 @@ const NowPremiering = () => {
 
         {/* Premieres Grid */}
         <div className={`grid md:grid-cols-2 lg:grid-cols-3 ${isMobile ? 'gap-4' : 'gap-8'} mb-12`}>
-          {premieres.map(movie => <Card key={movie.id} className="group bg-card-accent/30 border-border/20 hover:border-golden/30 theatre-transition overflow-hidden ticket-hover premiere-spotlight">
+          {premieres.map(movie => <Card key={movie?.id} className="group bg-card-accent/30 border-border/20 hover:border-golden/30 theatre-transition overflow-hidden ticket-hover premiere-spotlight">
               <CardContent className="p-0">
                 {/* Movie Poster */}
                 <div className="relative overflow-hidden">
-                  <img src={movie.poster} alt={movie.title} className={`w-full ${isMobile ? 'h-60' : 'h-80'} object-cover group-hover:scale-105 theatre-transition`} />
+                  <img src={movie?.poster} alt={movie?.title} className={`w-full ${isMobile ? 'h-60' : 'h-80'} object-cover group-hover:scale-105 theatre-transition`} />
                   
                   {/* Overlay Info */}
                   <div className="absolute top-4 left-4 right-4 flex justify-between items-start">
                     <Badge className="bg-golden text-black font-semibold text-xs">
-                      {movie.state}
+                      {movie?.language}
                     </Badge>
                     <Badge variant="secondary" className="bg-background/80 backdrop-blur-sm text-xs">
                       <Clock className="w-3 h-3 mr-1" />
-                      {isMobile ? movie.countdown.replace(' left', '') : movie.countdown}
+                      {isMobile ? movie.premier_days_left.replace(' left', '') : movie.premier_days_left} {"Days Left"}
                     </Badge>
                   </div>
 
@@ -127,7 +156,7 @@ const NowPremiering = () => {
                   <div className="absolute bottom-4 left-4">
                     <Badge className="bg-primary/90 backdrop-blur-sm text-white text-xs">
                       <Calendar className="w-3 h-3 mr-2" />
-                      {new Date(movie.premiereDate).toLocaleDateString('en-US', {
+                      {new Date(movie.premier_date).toLocaleDateString('en-US', {
                       month: 'short',
                       day: 'numeric'
                     })}
@@ -143,18 +172,18 @@ const NowPremiering = () => {
                         {movie.title}
                       </h3>
                       <p className="text-xs text-muted-foreground">
-                        {movie.language} • {movie.genre}
+                        {movie.language} • {movie.genres}
                       </p>
                     </div>
                     <div className="flex items-center space-x-1">
                       <Star className="w-4 h-4 text-golden fill-golden" />
-                      <span className="text-xs font-semibold text-golden">{movie.rating}</span>
+                      <span className="text-xs font-semibold text-golden">{movie?.rating_avg}</span>
                     </div>
                   </div>
 
                   {!isMobile && (
                     <p className="text-sm text-muted-foreground mb-4 leading-relaxed line-clamp-2">
-                      {movie.description}
+                      {movie?.overview}
                     </p>
                   )}
 
@@ -162,7 +191,7 @@ const NowPremiering = () => {
                     <div className="flex items-center space-x-4 text-xs text-muted-foreground">
                       <span className="flex items-center">
                         <Clock className="w-3 h-3 mr-1" />
-                        {movie.duration}
+                        {movie?.runtime}
                       </span>
                     </div>
                     <span className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold text-golden`}>{movie.price}</span>

@@ -103,7 +103,7 @@ const Hero = () => {
             </Link>
           </Button>
           <Button variant="outline" size={isMobile ? "default" : "lg"} asChild className="border-golden/50 text-golden hover:bg-golden/10 px-8 py-4 text-lg font-semibold hover:scale-105 theatre-transition w-full sm:w-auto">
-            <Link to="/library">
+            <Link to="/my-library">
               <Play className="w-5 h-5 mr-3" />
               {isMobile ? 'Library' : 'Explore Library'}
             </Link>
