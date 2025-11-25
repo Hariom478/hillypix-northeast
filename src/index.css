@@ -247,3 +247,16 @@ input.PhoneInputInput {
 .PhoneInputCountrySelect {
     background-color: #242424;
 }
+
+.bannersectiondetail::before
+{
+      content: "";
+    position: absolute;
+    top: 90%;
+    left: 0;
+    width: 100%;
+    filter: blur(15px);
+    height: 100px;
+    background: linear-gradient(45deg, #00050d, #00050d);
+    z-index: 3;
+}

@@ -279,6 +279,7 @@ const handleGenreChange = (id) => {
   {lists.map(list => (
     <TabsContent key={list.id} value={list.id} className="mt-8">
 
+
       <div className={`grid ${isMobile ? 'grid-cols-3 gap-2' : 'md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'}`}>
 
         {movies?.map(movie => (
@@ -331,6 +332,7 @@ const handleGenreChange = (id) => {
                         }
 
                     </Button>
+                    
                   </div>
                 )}
               </div>
