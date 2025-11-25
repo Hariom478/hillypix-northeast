@@ -4,7 +4,7 @@ import Footer from '@/components/Footer';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { getTitleDetail } from "@/lib/graphql";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Star } from 'lucide-react';
+import { BookmarkPlus, Star } from 'lucide-react';
 import Reviews from '@/components/Reviews';
 import { getReviewList } from "@/lib/graphql";
 import { toast } from '@/components/ui/sonner';
@@ -12,6 +12,7 @@ import { saveReview } from "@/lib/graphql";
 
 const sampleVideo = "https://www.w3schools.com/html/mov_bbb.mp4"; // swap with your actual video path
 const posterImage = "src/assets/movie-poster-2.jpg"; // provided image path
+import { getUser } from "@/lib/localAuth";
 
 const reviews = [
   {
@@ -54,6 +55,7 @@ interface SubmitInput {
 
 const Details = ({ params }) => {
 
+  const user = getUser();
   const { state } = useLocation();
   const navigate = useNavigate();
   const movie = state?.videos;
@@ -161,7 +163,7 @@ const fetchReviews = async () => {
 
   useEffect(() => {
     // fetch when slug changes (avoid running on every render)
-    getTitleDetail(movie?.slug, 71)
+    getTitleDetail(movie?.slug, user?.id)
       .then((res) => {
         const data = res?.getTitleDetail?.data || null;
         setTitleData(data?.title[0]);
@@ -278,9 +280,10 @@ const fetchReviews = async () => {
                 {titleData?.type === 'song' ? 'Play' : 'Subscribe to Watch'}
               </button>
 
-              <button className="bg-[#410e7b] hover:bg-purple-950 border border-gray-700 px-4 py-2 rounded-md text-sm">
-                ADD TO WATCHLIST
+              <button className="bg-[#410e7b] hover:bg-purple-950 border border-gray-700 px-2 py-2 rounded-md text-sm">
+                <BookmarkPlus className="w-[20px] h-[20px]" />
               </button>
+              
             </div>
 
             {/* small caption overlay like in screenshot */}
@@ -292,13 +295,13 @@ const fetchReviews = async () => {
       {/* Tabs section */}
       <section className="max-w-6xl mx-auto px-6 lg:px-8 py-8">
         <div className="bg-transparent border-b border-gray-800 pb-4">
-          <div className="flex gap-3">
+          <div className="flex py-5 border-b border-gray-500">
             {titleData?.type === "tvSeries" && titleData?.seasons?.length ? (
               <>
                 {/* Episodes Tab */}
                 <button
                   onClick={() => setActiveTab("episodes")}
-                  className={`px-4 py-2 rounded-t-md ${activeTab === "episodes"
+                  className={`px-6 py-2 rounded-l-sm border-r-2 border-white ${activeTab === "episodes"
                     ? "bg-purple-700 text-white"
                     : "bg-gray-800 text-gray-300"
                     }`}
@@ -309,7 +312,7 @@ const fetchReviews = async () => {
                 {/* Cast Tab */}
                 <button
                   onClick={() => setActiveTab("cast")}
-                  className={`px-4 py-2 rounded-t-md ${activeTab === "cast"
+                  className={`px-6 py-2 border-r-2 border-white ${activeTab === "cast"
                     ? "bg-purple-700 text-white"
                     : "bg-gray-800 text-gray-300"
                     }`}
@@ -320,7 +323,7 @@ const fetchReviews = async () => {
                 {/* Reviews Tab */}
                 <button
                   onClick={() => setActiveTab("reviews")}
-                  className={`px-4 py-2 rounded-t-md ${activeTab === "reviews"
+                  className={`px-6 py-2 rounded-r-sm ${activeTab === "reviews"
                     ? "bg-purple-700 text-white"
                     : "bg-gray-800 text-gray-300"
                     }`}
@@ -333,7 +336,7 @@ const fetchReviews = async () => {
                 {/* Cast Tab */}
                 <button
                   onClick={() => setActiveTab("cast")}
-                  className={`px-4 py-2 rounded-t-md ${activeTab === "cast"
+                  className={`px-4 py-2 rounded-l-sm border-r-2 border-white ${activeTab === "cast"
                     ? "bg-purple-700 text-white"
                     : "bg-gray-800 text-gray-300"
                     }`}
@@ -344,7 +347,7 @@ const fetchReviews = async () => {
                 {/* Reviews Tab */}
                 <button
                   onClick={() => setActiveTab("reviews")}
-                  className={`px-4 py-2 rounded-t-md ${activeTab === "reviews"
+                  className={`px-4 py-2 rounded-r-sm ${activeTab === "reviews"
                     ? "bg-purple-700 text-white"
                     : "bg-gray-800 text-gray-300"
                     }`}
@@ -371,9 +374,9 @@ const fetchReviews = async () => {
                     <button
                       key={season.id}
                       onClick={() => setActiveSeason(index)}
-                      className={`px-4 py-2 rounded-md border ${activeSeason === index
-                          ? "bg-purple-700 border-purple-500 text-white"
-                          : "bg-gray-800 border-gray-700 text-gray-300"
+                      className={`px-4 py-2 ${activeSeason === index
+                          ? "border-b-2 border-white text-white"
+                          : "text-white"
                         }`}
                     >
                       Season {season.number}
@@ -382,11 +385,17 @@ const fetchReviews = async () => {
                 </div>
 
                 {/* ---------------- EPISODE GRID ---------------- */}
-                <h3 className="text-lg font-semibold">
+                {/* <h3 className="text-lg font-semibold">
                   Episodes — Season {titleData?.seasons?.[activeSeason]?.number}
-                </h3>
+                </h3> */}
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+
+                  <div className="relative">
+                        <h3 className='text-white text-lg'>Rent : Season {titleData?.seasons?.[activeSeason]?.number}</h3>
+                        <p className='text-white'>Renting this season gives you access to watch all episodes up to 3 times within</p>
+                        <button className='absolute bottom-0 w-full bg-purple-600 text-white rounded-md py-2'>Rent</button>
+                  </div>
 
                   {titleData?.seasons?.[activeSeason]?.episodes?.map((ep: any) => (
                     <div
