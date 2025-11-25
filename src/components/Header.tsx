@@ -116,7 +116,10 @@ const Header = () => {
   const handleSelectItem = (route: string) => {
     setIsSearchOpen(false);
     setSearchQuery('');
-    navigate(route);
+
+    const videos=route;
+    navigate("/details", { state: { videos } });
+    // navigate(route);
   };
 
   // Keyboard shortcut for search (Ctrl+K or Cmd+K)
