@@ -19,6 +19,7 @@ import moviePoster4 from '@/assets/movie-poster-4.jpg';
 import moviePoster5 from '@/assets/movie-poster-5.jpg';
 import moviePoster6 from '@/assets/movie-poster-6.jpg';
 import { getHomePage } from "@/lib/graphql";
+import { useAuth } from "@/context/AuthProvider";
 
 const tvSeriesData = [
   {
@@ -172,6 +173,7 @@ const TVSeries = () => {
   const [selectedListId, setSelectedListId] = useState(null);
   const [movies, setMovies] = useState([]);
   const [allMovies, setAllMovies] = useState([]);
+  const { user, token, logout } = useAuth();
 
   const handleWatchlistToggle = (series: any, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -229,7 +231,7 @@ const TVSeries = () => {
 
   
   useEffect(() => {
-    getHomePage(71,'tvSeries').then(data => {
+    getHomePage(user?.id,'tvSeries').then(data => {
   
      const fetchedLists = data?.getHomePage?.data?.list || [];
       const filteredLists = fetchedLists.filter(list =>

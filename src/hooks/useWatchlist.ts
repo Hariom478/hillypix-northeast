@@ -4,6 +4,7 @@ import {
   addToWatchList as addToWatchListAPI, 
   removeFromWatchlist as removeFromWatchListAPI 
 } from "@/lib/graphql";
+import { useAuth } from "@/context/AuthProvider";
 
 export interface WatchlistItem {
   id: number;

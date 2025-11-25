@@ -16,6 +16,7 @@ import moviePoster5 from '@/assets/movie-poster-5.jpg';
 import moviePoster6 from '@/assets/movie-poster-6.jpg';
 import { getHomePage } from "@/lib/graphql";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/context/AuthProvider";
 
 const genres = [{
   id: 'all',
@@ -83,7 +84,7 @@ const [selectedListId, setSelectedListId] = useState(null);
 const [movies, setMovies] = useState([]);
 const [allMovies, setAllMovies] = useState([]);
 const navigate = useNavigate();
-
+const { user, token, logout } = useAuth();
 
   const {
     addToWatchlist,
@@ -96,7 +97,7 @@ const navigate = useNavigate();
 
 
 useEffect(() => {
-  getHomePage(71).then(data => {
+  getHomePage(user?.id).then(data => {
 
    const fetchedLists = data?.getHomePage?.data?.list || [];
 

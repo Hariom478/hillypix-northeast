@@ -18,6 +18,7 @@ import moviePoster6 from '@/assets/movie-poster-6.jpg';
 import Api from "@/api/serverApi";
 import { useNavigate } from "react-router-dom";
 import TicketPurchaseDialog from '../components/TicketPurchaseDialog';
+import { useAuth } from "@/context/AuthProvider";
 
 
 
@@ -70,11 +71,12 @@ const states = [
 ];
 
 const Music = () => {
+  const { user, token, logout } = useAuth();
   const [selectedTab, setSelectedTab] = useState('trending');
   const [selectedState, setSelectedState] = useState('all');
   const { toast } = useToast();
   const isMobile = useIsMobile();
-  const { addToWatchlist, removeFromWatchlist, isInWatchlist } = useWatchlist(71,'music');
+  const { addToWatchlist, removeFromWatchlist, isInWatchlist } = useWatchlist(user?.id,'music');
 
 
 const [movies, setMovies] = useState([]);
@@ -85,6 +87,8 @@ const navigate = useNavigate();
 const [selectedMovie, setSelectedMovie] = useState<any>(null);
 const [isTicketDialogOpen, setIsTicketDialogOpen] = useState(false);
 
+
+
   const handleWatchlistToggle = (video: any, e: React.MouseEvent) => {
     e.stopPropagation();
     if (isInWatchlist(video.id)) {
@@ -93,14 +97,14 @@ const [isTicketDialogOpen, setIsTicketDialogOpen] = useState(false);
         title: "Removed from Watchlist",
         description: `${video.title} has been removed from your watchlist.`,
       });
-      fetchData(71,selectedLanguage);
+      fetchData(user?.id,selectedLanguage);
     } else {
       addToWatchlist(video);
       toast({
         title: "Added to Watchlist",
         description: `${video.title} has been added to your watchlist.`,
       });
-      fetchData(71,selectedLanguage);
+      fetchData(user?.id,selectedLanguage);
     }
   };
 
@@ -192,7 +196,7 @@ const fetchData = async (lang, user_id) => {
 
 useEffect(() => {
   // Initial fetch
-  fetchData("All", '71').then(data => {
+  fetchData("All", user?.id).then(data => {
 
     setMovies(data?.data || []);
 
@@ -204,7 +208,7 @@ useEffect(() => {
 
 const handleLanguageChange = (lang) => {
   setSelectedLanguage(lang);
-  fetchData(lang,'71').then(data => {
+  fetchData(lang,user?.id).then(data => {
     setMovies(data?.data || []);
   });
 };

@@ -12,9 +12,13 @@ export const requestWithToken = async (
   serverUserToken = null,
   noCache = true
 ) => {
+
+
   const userToken = Cookies.get("UserToken")
     ? Cookies.get("UserToken")
     : serverUserToken;
+
+    
   const graphQLClient = new GraphQLClientInstence(endpoint, {
     headers: {
       Authorization: userToken ? `Bearer ${userToken}` : "",

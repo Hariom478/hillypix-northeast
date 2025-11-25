@@ -20,6 +20,7 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import AuthDialog from './AuthDialog';
+import { mergeServerUser } from '@/lib/localAuth';
 import UserProfileDialog from './UserProfileDialog';
 import { searchableContent } from '@/data/searchData';
 
@@ -41,14 +42,53 @@ const Header = () => {
     }
   }, []);
 
+  // Keep header in sync if another tab or component updates the stored user
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === 'hillypix-user' || e.key === 'auth') {
+        try {
+          const saved = localStorage.getItem('hillypix-user');
+          if (saved) setUser(JSON.parse(saved));
+          else {
+            const raw = localStorage.getItem('auth');
+            if (raw) {
+              const parsed = JSON.parse(raw);
+              setUser(parsed?.user || null);
+            } else setUser(null);
+          }
+        } catch (err) {
+          setUser(null);
+        }
+      }
+    };
+
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
+
   const handleAuthSuccess = (userData: any) => {
-    setUser(userData);
-    localStorage.setItem('hillypix-user', JSON.stringify(userData));
+    try {
+      const merged = mergeServerUser(userData);
+      setUser(merged);
+      localStorage.setItem('hillypix-user', JSON.stringify(merged));
+    } catch (e) {
+      setUser(userData);
+      try {
+        localStorage.setItem('hillypix-user', JSON.stringify(userData));
+      } catch (e2) {
+        /* ignore */
+      }
+    }
   };
 
   const handleSignOut = () => {
     setUser(null);
-    localStorage.removeItem('hillypix-user');
+    try {
+      localStorage.removeItem('hillypix-user');
+      localStorage.removeItem('auth');
+    } catch (e) {
+      /* ignore */
+    }
   };
 
   const filteredContent = searchableContent.filter((item) => {
@@ -182,14 +222,19 @@ const Header = () => {
                 onClick={() => setIsProfileDialogOpen(true)}
                 className="text-muted-foreground hover:text-golden hidden md:flex"
               >
-                <div className="w-8 h-8 rounded-full bg-golden/20 flex items-center justify-center">
-                  <span className="text-xs font-semibold text-golden">
-                    {user?.name
-    ? user.name.charAt(0).toUpperCase()
-    : user?.firstname
-    ? user.firstname.charAt(0).toUpperCase()
-    : 'U'}
-                  </span>
+                <div className="w-8 h-8 rounded-full bg-golden/20 flex items-center justify-center overflow-hidden">
+                  {user?.avatar_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={user.avatar_url} alt={user.name || 'avatar'} className="w-8 h-8 rounded-full object-cover" />
+                  ) : (
+                    <span className="text-xs font-semibold text-golden">
+                      {user?.name
+                        ? user.name.charAt(0).toUpperCase()
+                        : user?.firstname
+                        ? user.firstname.charAt(0).toUpperCase()
+                        : 'U'}
+                    </span>
+                  )}
                 </div>
               </Button>
             ) : null}
@@ -260,7 +305,7 @@ const Header = () => {
                       Music
                     </Link>
                   </Button>
-                  <Button 
+                  {/* <Button 
                     variant="ghost" 
                     asChild 
                     className={`justify-start text-foreground hover:text-golden theatre-transition ${location.pathname === '/hall-of-fame' ? 'text-golden bg-golden/10' : ''}`}
@@ -270,7 +315,7 @@ const Header = () => {
                       <Award className="w-4 h-4 mr-3" />
                       Hall of Fame
                     </Link>
-                  </Button>
+                  </Button> */}
                   <Button 
                     variant="ghost" 
                     asChild 

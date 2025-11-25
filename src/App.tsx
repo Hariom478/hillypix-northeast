@@ -15,6 +15,7 @@ import AllHonorees from "./pages/AllHonorees";
 import AboutUs from "./pages/AboutUs";
 import VideoPlayerPage from "./pages/VideoPlayerPage";
 import DetailsPage from "./pages/Details";
+import { AuthProvider } from "./context/AuthProvider";
 
 const queryClient = new QueryClient();
 
@@ -23,6 +24,7 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
+       <AuthProvider>   
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
@@ -40,6 +42,7 @@ const App = () => (
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
+      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
