@@ -19,7 +19,8 @@ import moviePoster4 from '@/assets/movie-poster-4.jpg';
 import moviePoster5 from '@/assets/movie-poster-5.jpg';
 import moviePoster6 from '@/assets/movie-poster-6.jpg';
 import { getHomePage } from "@/lib/graphql";
-import { useAuth } from "@/context/AuthProvider";
+// import { useAuth } from "@/context/AuthProvider";
+import { getUser } from "@/lib/localAuth";
 
 const tvSeriesData = [
   {
@@ -159,11 +160,12 @@ const tvSeriesData = [
 ];
 
 const TVSeries = () => {
+ const user = getUser();
   const [selectedTab, setSelectedTab] = useState('all');
   const [selectedSeries, setSelectedSeries] = useState<any>(null);
   const [isTicketDialogOpen, setIsTicketDialogOpen] = useState(false);
   const [expandedSeries, setExpandedSeries] = useState<number | null>(null);
-  const { addToWatchlist, removeFromWatchlist, isInWatchlist } = useWatchlist(71,'tvSeries');
+  const { addToWatchlist, removeFromWatchlist, isInWatchlist } = useWatchlist(user?.id,'tvSeries');
   const { getContinueWatching, getProgress } = useWatchProgress();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -173,31 +175,80 @@ const TVSeries = () => {
   const [selectedListId, setSelectedListId] = useState(null);
   const [movies, setMovies] = useState([]);
   const [allMovies, setAllMovies] = useState([]);
-  const { user, token, logout } = useAuth();
 
-  const handleWatchlistToggle = (series: any, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (isInWatchlist(series.id)) {
-      removeFromWatchlist(series.id);
-      toast({
-        title: "Removed from Watchlist",
-        description: `${series.title} has been removed from your watchlist.`,
-      });
-    } else {
-      addToWatchlist({
-        id: series.id,
-        title: series.title,
-        poster: series.poster,
-        rating: series.rating,
-        duration: series.duration,
-        language: series.language,
-        genre: series.genre
-      });
-      toast({
-        title: "Added to Watchlist",
-        description: `${series.title} has been added to your watchlist.`,
-      });
+  // const handleWatchlistToggle = (series: any, e: React.MouseEvent) => {
+  //   e.stopPropagation();
+  //   if (isInWatchlist(series.id)) {
+  //     removeFromWatchlist(series.id);
+  //     toast({
+  //       title: "Removed from Watchlist",
+  //       description: `${series.title} has been removed from your watchlist.`,
+  //     });
+  //   } else {
+  //     addToWatchlist({
+  //       id: series.id,
+  //       title: series.title,
+  //       poster: series.poster,
+  //       rating: series.rating,
+  //       duration: series.duration,
+  //       language: series.language,
+  //       genre: series.genre
+  //     });
+  //     toast({
+  //       title: "Added to Watchlist",
+  //       description: `${series.title} has been added to your watchlist.`,
+  //     });
+  //   }
+  // };
+
+  const handleWatchlistToggle = (video: any, e: React.MouseEvent) => {
+
+    if (!user) {
+      toast({ title: "Login Required", description: "Please login first." });
+      navigate("/login");
+      return;
     }
+
+    const updatedWatchStatus = video.is_user_watched == 1 ? 0 : 1;
+
+      // 🔥 Update local UI immediately
+      setMovies(prev =>
+        prev.map(item =>
+          item.id === video.id ? { ...item, is_user_watched: updatedWatchStatus } : item
+        )
+      );
+
+      // Backend call (optional)
+      if (updatedWatchStatus === 1) {
+        addToWatchlist(video);
+        toast({
+          title: "Added to Watchlist",
+          description: `${video.title} added to your watchlist.`,
+        });
+      } else {
+        removeFromWatchlist(Number(video.id));
+        toast({
+          title: "Removed from Watchlist",
+          description: `${video.title} removed from your watchlist.`,
+        });
+      }
+
+    // e.stopPropagation();
+    // if (video?.is_watchlist) {
+    //   removeFromWatchlist(video?.id);
+    //   toast({
+    //     title: "Removed from Watchlist",
+    //     description: `${video.title} has been removed from your watchlist.`,
+    //   });
+    //   fetchData(user?.id,selectedLanguage);
+    // } else {
+    //   addToWatchlist(video);
+    //   toast({
+    //     title: "Added to Watchlist",
+    //     description: `${video.title} has been added to your watchlist.`,
+    //   });
+    //   fetchData(user?.id,selectedLanguage);
+    // }
   };
 
   const handleBuySeries = (series: any) => {
@@ -434,13 +485,28 @@ const TVSeries = () => {
                   </p>
                 </div>
 
-                <Button size="sm" variant="ghost" onClick={(e) => handleWatchlistToggle(series, e)}>
+                <Button
+                              size="sm"
+                              variant="outline"
+                              className={`border-golden/30 transition ${
+                                series?.is_user_watched == 1 ? "bg-golden/10" : ""
+                              }`}
+                              onClick={(e) => handleWatchlistToggle(series, e)}
+                            >
+                              {series?.is_user_watched == 1 ? (
+                                <BookmarkCheck className="w-3 h-3 text-golden" />
+                              ) : (
+                                <BookmarkPlus className="w-3 h-3" />
+                              )}
+                            </Button>
+
+                {/* <Button size="sm" variant="ghost" onClick={(e) => handleWatchlistToggle(series, e)}>
                   {isInWatchlist(series.id) ? (
                     <BookmarkCheck className="w-5 h-5 text-golden" />
                   ) : (
                     <BookmarkPlus className="w-5 h-5" />
                   )}
-                </Button>
+                </Button> */}
               </div>
 
               {/* Action Buttons */}

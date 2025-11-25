@@ -18,7 +18,6 @@ export const requestWithToken = async (
     ? Cookies.get("UserToken")
     : serverUserToken;
 
-    
   const graphQLClient = new GraphQLClientInstence(endpoint, {
     headers: {
       Authorization: userToken ? `Bearer ${userToken}` : "",
@@ -92,6 +91,7 @@ export async function getHomePage(user_id,type=null) {
                 tv_portrait_image
                 tv_landscape_image
                 runtime
+                is_user_watched
                 slug
                 is_title_rent_by_user
                 videos { id name thumbnail url type quality title_id language runtime advertisement_video is_paid category }

@@ -1,25 +1,71 @@
-export function getAuth() {
-  if (typeof window === "undefined") return null;
+import Cookies from "js-cookie";
+
+export function saveServerAuth(serverUser: any, token?: string, current_device_token?: string) {
+  if (typeof window === "undefined") return;
+
   try {
-    const raw = localStorage.getItem("auth");
-    return raw ? JSON.parse(raw) : null;
-  } catch (e) {
-    return null;
+    const mergedUser = mergeServerUser(serverUser);
+
+    const cookieOptions = {
+      expires: 7,
+      path: "/",
+      sameSite: "Lax",
+      // secure: process.env.NODE_ENV === "production" // uncomment for HTTPS only
+    };
+
+    // Save cookies exactly like your existing pattern
+    if (token) Cookies.set("UserToken", token, cookieOptions);
+    if (current_device_token) Cookies.set("CurrentDeviceToken", current_device_token, cookieOptions);
+    
+    Cookies.set("UserData", JSON.stringify(mergedUser), cookieOptions);
+
+  } catch (err) {
+    console.error("Error saving auth cookies", err);
   }
 }
 
+// ----------------------
+// Get User Token
+// ----------------------
+export function getToken() {
+  return typeof window !== "undefined" ? Cookies.get("UserToken") || null : null;
+}
+
+// ----------------------
+// Get Current Device Token
+// ----------------------
+export function getCurrentDeviceToken() {
+  return typeof window !== "undefined" ? Cookies.get("CurrentDeviceToken") || null : null;
+}
+
+// ----------------------
+// Get User Data
+// ----------------------
 export function getUser() {
   if (typeof window === "undefined") return null;
+
   try {
-    const lite = localStorage.getItem("hillypix-user");
-    if (lite) return JSON.parse(lite);
-    const auth = getAuth();
-    return auth?.user || null;
-  } catch (e) {
+    const cookieUser = Cookies.get("UserData");
+    return cookieUser ? JSON.parse(cookieUser) : null;
+  } catch {
     return null;
   }
 }
 
+// ----------------------
+// Clear Cookies
+// ----------------------
+export function clearAuth() {
+  if (typeof window === "undefined") return;
+
+  Cookies.remove("UserToken", { path: "/" });
+  Cookies.remove("CurrentDeviceToken", { path: "/" });
+  Cookies.remove("UserData", { path: "/" });
+}
+
+// ----------------------
+// Merge User (Optional Same Logic)
+// ----------------------
 function buildName(user: any) {
   if (!user) return "";
   return (
@@ -28,38 +74,9 @@ function buildName(user: any) {
   );
 }
 
-// merge server user with existing local user; local fields take precedence
 export function mergeServerUser(serverUser: any) {
   const existing = getUser() || {};
   const merged = { ...(serverUser || {}), ...(existing || {}) };
   merged.name = buildName(merged) || serverUser?.name || existing?.name || "";
   return merged;
-}
-
-export function saveServerAuth(serverUser: any, token?: string, current_device_token?: string) {
-  if (typeof window === "undefined") return;
-  try {
-    const mergedUser = mergeServerUser(serverUser);
-    const authObj: any = { token: token || null, user: mergedUser };
-    if (current_device_token) authObj.current_device_token = current_device_token;
-    localStorage.setItem("auth", JSON.stringify(authObj));
-    localStorage.setItem("hillypix-user", JSON.stringify(mergedUser));
-  } catch (e) {
-    // fallback: try to write raw server user as hillypix-user
-    try {
-      if (serverUser) localStorage.setItem("hillypix-user", JSON.stringify(serverUser));
-    } catch (e2) {
-      // ignore
-    }
-  }
-}
-
-export function clearAuth() {
-  if (typeof window === "undefined") return;
-  try {
-    localStorage.removeItem("auth");
-    localStorage.removeItem("hillypix-user");
-  } catch (e) {
-    // ignore
-  }
 }

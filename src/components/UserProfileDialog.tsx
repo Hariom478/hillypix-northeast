@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { updateUserProfile } from '@/lib/graphql';
 import { User, Mail, Phone, Settings, LogOut, Edit } from 'lucide-react';
+import Cookies from "js-cookie";
 
 interface UserProfileDialogProps {
   open: boolean;
@@ -167,8 +168,11 @@ const handleSaveProfile = async () => {
 
 
   const handleSignOut = () => {
-    localStorage.removeItem("hillypix-user");
-    localStorage.removeItem("auth");
+    // localStorage.removeItem("hillypix-user");
+    // localStorage.removeItem("auth");
+    Cookies.remove("UserToken", { path: "/" });
+    Cookies.remove("CurrentDeviceToken", { path: "/" });
+    Cookies.remove("UserData", { path: "/" });
     toast({ title: "Signed Out Successfully..." });
     onSignOut();
     onOpenChange(false);

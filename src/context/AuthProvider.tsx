@@ -1,4 +1,3 @@
-// src/context/AuthProvider.tsx
 "use client";
 import { createContext, useContext, useEffect, useState } from "react";
 import Cookies from "js-cookie";
@@ -9,10 +8,18 @@ export const AuthProvider = ({ children }: { children: any }) => {
   const [user, setUser] = useState<any>(null);
   const [token, setToken] = useState<string | null>(null);
 
-  // Load auth from cookies when app opens
+  const logout = () => {
+    Cookies.remove("UserData", { path: "/" });
+    Cookies.remove("UserToken", { path: "/" });
+    Cookies.remove("CurrentDeviceToken", { path: "/" });
+    setUser(null);
+    setToken(null);
+  };
+
+  // Load authentication state
   useEffect(() => {
-    const userCookie = Cookies.get("user");
-    const tokenCookie = Cookies.get("token");
+    const userCookie = Cookies.get("UserData");
+    const tokenCookie = Cookies.get("UserToken");
 
     if (userCookie && tokenCookie) {
       try {
@@ -20,26 +27,20 @@ export const AuthProvider = ({ children }: { children: any }) => {
         setToken(tokenCookie);
       } catch (err) {
         console.error("Failed to parse cookie", err);
-        setUser(null);
-        setToken(null);
+        logout();
       }
+    } else {
+      // 👇 Auto logout if cookies are missing
+      logout();
     }
   }, []);
 
   const login = (data: any, token: string) => {
+    Cookies.set("UserData", JSON.stringify(data), { expires: 7, path: "/" });
+    Cookies.set("UserToken", token, { expires: 7, path: "/" });
 
-    console.log("datadsfsdf",data);
-    Cookies.set("UserData", JSON.stringify(data), { expires: 1 }); // expires in 7 days
-    Cookies.set("UserToken", token, { expires: 1 });
     setUser(data);
     setToken(token);
-  };
-
-  const logout = () => {
-    Cookies.remove("user");
-    Cookies.remove("token");
-    setUser(null);
-    setToken(null);
   };
 
   return (

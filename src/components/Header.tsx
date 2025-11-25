@@ -22,7 +22,7 @@ import {
 import AuthDialog from './AuthDialog';
 import { mergeServerUser } from '@/lib/localAuth';
 import UserProfileDialog from './UserProfileDialog';
-import { searchableContent } from '@/data/searchData';
+import { searchableContent,SearchItem   } from '@/data/searchData';
 
 const Header = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -33,6 +33,7 @@ const Header = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const location = useLocation();
   const navigate = useNavigate();
+  const [filteredContent, setFilteredContent] = useState<SearchItem[]>([]);
 
   // Load user from localStorage on component mount
   useEffect(() => {
@@ -91,15 +92,26 @@ const Header = () => {
     }
   };
 
-  const filteredContent = searchableContent.filter((item) => {
-    const query = searchQuery.toLowerCase();
-    return (
-      item.title.toLowerCase().includes(query) ||
-      item.language.toLowerCase().includes(query) ||
-      item.genre.toLowerCase().includes(query) ||
-      item.type.toLowerCase().includes(query)
-    );
-  });
+ useEffect(() => {
+    const fetchAndFilter = async () => {
+      const content = await searchableContent(searchQuery);
+
+      const filtered = content.filter((item) => {
+        const query = searchQuery.toLowerCase();
+        return (
+          item.title.toLowerCase().includes(query) ||
+          item.language.toLowerCase().includes(query) ||
+          item.genre.toLowerCase().includes(query) ||
+          item.type.toLowerCase().includes(query)
+        );
+      });
+
+      setFilteredContent(filtered);
+    };
+
+    fetchAndFilter();
+  }, [searchQuery]);
+
 
   const handleSelectItem = (route: string) => {
     setIsSearchOpen(false);

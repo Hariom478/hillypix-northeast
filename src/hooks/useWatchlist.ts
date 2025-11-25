@@ -28,7 +28,7 @@ export const useWatchlist = (userId=null, type=null) => {
     if (!userId) return;
 
     const fetchWatchlist = async () => {
-      const data = await getWatchListData(userId,type);
+      const data = await getWatchListData(Number(userId),type);
 
       const formatted = Array.isArray(data) ? data : [];
 
@@ -45,8 +45,8 @@ export const useWatchlist = (userId=null, type=null) => {
     try {
 
       const input={
-        user_id:userId,
-        title_id:item.id
+        user_id:Number(userId),
+        title_id:Number(item.id)
       }
       await addToWatchListAPI(input);
 
@@ -71,8 +71,8 @@ export const useWatchlist = (userId=null, type=null) => {
  const removeWatchlistItem = async (id: number) => {
   try {
     const input = {
-      user_id: userId,
-      title_id: id
+      user_id: Number(userId),
+      title_id: Number(id)
     };
 
     await removeFromWatchListAPI(input);
