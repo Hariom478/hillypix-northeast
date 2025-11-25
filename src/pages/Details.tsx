@@ -12,6 +12,7 @@ import { saveReview } from "@/lib/graphql";
 
 const sampleVideo = "https://www.w3schools.com/html/mov_bbb.mp4"; // swap with your actual video path
 const posterImage = "src/assets/movie-poster-2.jpg"; // provided image path
+import { getUser } from "@/lib/localAuth";
 
 const reviews = [
   {
@@ -54,6 +55,7 @@ interface SubmitInput {
 
 const Details = ({ params }) => {
 
+  const user = getUser();
   const { state } = useLocation();
   const navigate = useNavigate();
   const movie = state?.videos;
@@ -161,7 +163,7 @@ const fetchReviews = async () => {
 
   useEffect(() => {
     // fetch when slug changes (avoid running on every render)
-    getTitleDetail(movie?.slug, 71)
+    getTitleDetail(movie?.slug, user?.id)
       .then((res) => {
         const data = res?.getTitleDetail?.data || null;
         setTitleData(data?.title[0]);
