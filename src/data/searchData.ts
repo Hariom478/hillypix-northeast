@@ -105,13 +105,13 @@ export const searchableContent = async (query: string): Promise<SearchItem[]> =>
     const formattedResults: SearchItem[] = apiResults.map((item: any, index: number) => ({
       id: item?.id || index + 1,
       title: item?.title || "Unknown Title",
-      type: item?.category || "movie",
+      type: item?.type || "movie",
       genre: Array.isArray(item?.genres) ? item.genres.join(', ') : item?.genres || "Unknown",
       language: item?.language || "",
       poster: item?.poster || moviePoster1,
       rating: item?.rating || 0,
-      year: item?.releaseYear || 2023,
-      route: "/details",
+      year: item?.release_date || 2023,
+      route: item,
     }));
 
     return formattedResults.length ? formattedResults : [];

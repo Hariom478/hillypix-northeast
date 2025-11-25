@@ -835,6 +835,11 @@ export async function searchByTitle(user_id=null,title) {
                   tv_portrait_image
                   type
                   tv_banner
+                  slug
+                  type 
+                  language 
+                  genres 
+                  release_date
                   is_title_rent_by_user
                   getpayperwatch
                   {
