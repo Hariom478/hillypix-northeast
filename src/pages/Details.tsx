@@ -25,6 +25,8 @@ const reviews = [
   },
 ];
 
+
+
 type Card = {
   id: number;
   title: string;
@@ -223,10 +225,13 @@ const fetchReviews = async () => {
       <section className="relative h-[520px] lg:h-[600px] overflow-hidden bannersectiondetail">
         {/* Background video/banner - prefer trailer, fallback to first video, then sample video */}
 
-        <div className="absolute inset-0 w-full h-full overflow-hidden" style={{
+        <div className="absolute inset-0 w-full h-full overflow-hidden object-cover no-repeat" style={{
           backgroundImage: `url(${
             titleData?.tv_banner || "src/assets/banner_placeholder.png"
           })`,
+          backgroundSize: 'cover',
+          backgroundRepeat: 'no-repeat',
+          backgroundPosition: 'center',
         }}>
           {titleData?.trailer_video_url && (
             <video

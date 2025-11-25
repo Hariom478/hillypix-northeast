@@ -90,6 +90,7 @@ export async function getHomePage(user_id,type=null) {
                 runtime
                 slug
                 is_title_rent_by_user
+                is_user_watched
                 videos { id name thumbnail url type quality title_id language runtime advertisement_video is_paid category }
                 getpayperwatch {
                     id
@@ -830,6 +831,7 @@ export async function searchByTitle(user_id=null,title) {
                   tv_landscape_image
                   tv_portrait_image
                   type
+                  poster
                   tv_banner
                   slug
                   type 

@@ -20,6 +20,7 @@ export interface SearchItem {
   route: string;
 }
 
+
 // Default fallback static content (can be replaced by API results)
 // export const searchableContent: SearchItem[] = 
 
@@ -113,12 +114,15 @@ export const searchableContent = async (query: string): Promise<SearchItem[]> =>
       year: item?.release_date || 2023,
       route: item,
     }));
+    console.log("Formatted Results:", formattedResults);
 
     return formattedResults.length ? formattedResults : [];
+
   } catch (error) {
     console.error("Search API Error:", error);
     return []; // Return empty array if API fails
   }
+  
 };
 
 

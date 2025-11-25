@@ -29,14 +29,13 @@ const Footer = () => {
             <Accordion type="single" collapsible className="mb-6">
               <AccordionItem value="states">
                 <AccordionTrigger className="font-spartan font-semibold text-foreground">
-                  Eight States
+                  Explore
                 </AccordionTrigger>
                 <AccordionContent>
                   <nav className="space-y-2 text-sm">
-                    <a href="#" className="block text-muted-foreground hover:text-golden theatre-transition">Assam</a>
-                    <a href="#" className="block text-muted-foreground hover:text-golden theatre-transition">Manipur</a>
-                    <a href="#" className="block text-muted-foreground hover:text-golden theatre-transition">Nagaland</a>
-                    <a href="#" className="block text-muted-foreground hover:text-golden theatre-transition">Meghalaya</a>
+                    <a href="/premieres" className="block text-muted-foreground hover:text-golden theatre-transition">Movies</a>
+                    <a href="/tv-series" className="block text-muted-foreground hover:text-golden theatre-transition">TV Series</a>
+                    <a href="/music" className="block text-muted-foreground hover:text-golden theatre-transition">Music</a>
                   </nav>
                 </AccordionContent>
               </AccordionItem>
@@ -47,9 +46,17 @@ const Footer = () => {
                 </AccordionTrigger>
                 <AccordionContent>
                   <nav className="space-y-2 text-sm">
-                    <a href="#" className="block text-muted-foreground hover:text-golden theatre-transition">Premieres</a>
-                    <a href="#" className="block text-muted-foreground hover:text-golden theatre-transition">Library</a>
-                    <a href="#" className="block text-muted-foreground hover:text-golden theatre-transition">Hall of Fame</a>
+                    <a href="/hillywood-fiesta" className="block text-muted-foreground hover:text-golden theatre-transition">Hillywood Fiesta</a>
+                  </nav>
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="Support">
+                <AccordionTrigger className="font-spartan font-semibold text-foreground">
+                  Support
+                </AccordionTrigger>
+                <AccordionContent>
+                  <nav className="space-y-2 text-sm">
+                    <a href="/about" className="block text-muted-foreground hover:text-golden theatre-transition">About Us</a>
                   </nav>
                 </AccordionContent>
               </AccordionItem>
@@ -62,9 +69,9 @@ const Footer = () => {
           </>
         ) : (
           <>
-            <div className="grid md:grid-cols-4 gap-8">
+            <div className="grid md:grid-cols-5 gap-8">
               {/* Brand */}
-              <div className="col-span-2 md:col-span-1">
+              <div className="col-span-2 md:col-span-2">
                 <img 
                   src={hillywoodLogo} 
                   alt="HillyWood" 
@@ -83,16 +90,11 @@ const Footer = () => {
 
               {/* States */}
               <div>
-                <h4 className="font-spartan font-semibold text-foreground mb-4">Eight States</h4>
+                <h4 className="font-spartan font-semibold text-foreground mb-4">Explore</h4>
                 <nav className="space-y-2 text-sm">
-                  <a href="#" className="block text-muted-foreground hover:text-golden theatre-transition">Assam</a>
-                  <a href="#" className="block text-muted-foreground hover:text-golden theatre-transition">Manipur</a>
-                  <a href="#" className="block text-muted-foreground hover:text-golden theatre-transition">Nagaland</a>
-                  <a href="#" className="block text-muted-foreground hover:text-golden theatre-transition">Meghalaya</a>
-                  <a href="#" className="block text-muted-foreground hover:text-golden theatre-transition">Mizoram</a>
-                  <a href="#" className="block text-muted-foreground hover:text-golden theatre-transition">Tripura</a>
-                  <a href="#" className="block text-muted-foreground hover:text-golden theatre-transition">Arunachal Pradesh</a>
-                  <a href="#" className="block text-muted-foreground hover:text-golden theatre-transition">Sikkim</a>
+                  <a href="/premieres" className="block text-muted-foreground hover:text-golden theatre-transition">Movies</a>
+                  <a href="/tv-series" className="block text-muted-foreground hover:text-golden theatre-transition">TV Series</a>
+                  <a href="/music" className="block text-muted-foreground hover:text-golden theatre-transition">Music</a>
                 </nav>
               </div>
 
@@ -100,10 +102,7 @@ const Footer = () => {
               <div>
                 <h4 className="font-spartan font-semibold text-foreground mb-4">Platform</h4>
                 <nav className="space-y-2 text-sm">
-                  <a href="#" className="block text-muted-foreground hover:text-golden theatre-transition">Premieres</a>
-                  <a href="#" className="block text-muted-foreground hover:text-golden theatre-transition">Library</a>
-                  <a href="#" className="block text-muted-foreground hover:text-golden theatre-transition">Hall of Fame</a>
-                  <a href="#" className="block text-muted-foreground hover:text-golden theatre-transition">About</a>
+                  <a href="/hillywood-fiesta" className="block text-muted-foreground hover:text-golden theatre-transition">Hillywood Fiesta</a>
                 </nav>
               </div>
 
@@ -111,10 +110,7 @@ const Footer = () => {
               <div>
                 <h4 className="font-spartan font-semibold text-foreground mb-4">Support</h4>
                 <nav className="space-y-2 text-sm">
-                  <a href="#" className="block text-muted-foreground hover:text-golden theatre-transition">Help Center</a>
-                  <a href="#" className="block text-muted-foreground hover:text-golden theatre-transition">Community</a>
-                  <a href="#" className="block text-muted-foreground hover:text-golden theatre-transition">Contact</a>
-                  <a href="#" className="block text-muted-foreground hover:text-golden theatre-transition">Press Kit</a>
+                  <a href="/about" className="block text-muted-foreground hover:text-golden theatre-transition">About Us</a>
                 </nav>
               </div>
             </div>
