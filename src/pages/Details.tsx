@@ -9,10 +9,17 @@ import Reviews from '@/components/Reviews';
 import { getReviewList } from "@/lib/graphql";
 import { toast } from '@/components/ui/sonner';
 import { saveReview } from "@/lib/graphql";
-
+import { useToast } from '@/hooks/use-toast';
 const sampleVideo = "https://www.w3schools.com/html/mov_bbb.mp4"; // swap with your actual video path
 const posterImage = "src/assets/movie-poster-2.jpg"; // provided image path
 import { getUser } from "@/lib/localAuth";
+import { getToken } from "@/lib/localAuth";
+import TicketPurchaseDialog from '../components/TicketPurchaseDialog';
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
+dayjs.extend(relativeTime);
+import placeholderBanner from "@/assets/banner_placeholder.png";
+
 
 const reviews = [
   {
@@ -53,9 +60,24 @@ interface SubmitInput {
   user_id: number;
 }
 
+function loadScript(src) {
+  return new Promise((resolve) => {
+    const script = document.createElement("script");
+    script.src = src;
+    script.onload = () => {
+      resolve(true);
+    };
+    script.onerror = () => {
+      resolve(false);
+    };
+    document.body.appendChild(script);
+  });
+}
+
 const Details = ({ params }) => {
 
   const user = getUser();
+  const userToken =getToken();
   const { state } = useLocation();
   const navigate = useNavigate();
   const movie = state?.videos;
@@ -79,6 +101,8 @@ const Details = ({ params }) => {
   const [titleData, setTitleData] = useState([]);
   const [showFullText, setShowFullText] = useState(false);
 
+  const [morelikethis, setMoreLikeThis] = useState([])
+
 const [reviewsData2, setReviewsData2] = useState([]);
   const [totalReviewData, setTotalReviewData] = useState([]);
   const [rating2, setRating2] = useState([]);
@@ -91,12 +115,16 @@ const [hover, setHover] = useState<number | null>(null);
   const handleShow = () => setShowModal(true);
   const handleClose = () => setShowModal(false);
 
+  const [rentshowmodal,setRentShowModal] = useState(false);
+
+  const [selectedMovie, setSelectedMovie] = useState<any>(null);
+  const [isTicketDialogOpen, setIsTicketDialogOpen] = useState(false);
+
 
 const fetchReviews = async () => {
     try {
         const res = await getReviewList(Number(movie?.id), 1, 10);      
 
-        console.log("responserevies",res);
         setReviewsData2(res?.getReviewList?.data || []);
         setRating2(res?.getReviewList?.aggregates);
         setTotalReviewData(res?.getReviewList?.aggregates || []);
@@ -112,45 +140,73 @@ const fetchReviews = async () => {
     }
   }, [movie?.id]);
 
-// if (!token) {
-//     toast.error("You need to log in to submit a review.");
-//     return;
-//   }
 
-//   if (!rating || isNaN(rating) || rating < 1 || rating > 5) {
-//     toast.error("Please provide a valid rating between 1 and 5.");
-//     return;
-//   }
+useEffect(() => {
+     const ressdkss = loadScript("https://checkout.razorpay.com/v1/checkout.js");
+    if (!ressdkss) {
+      alert("Razorpay SDK failed to load. Are you online?");
+      return;
+    } else {
+      console.log("Confirm this");
+    }
+  });
 
-//   try {
-//     const inputData: SubmitInput = {
-//       title_id: Number(movie?.id),
-//       body: comment.trim(),
-//       score: rating,
-//       user_id: Number(user?.id),
-//     };
+   const handleRentClose = () => {
+    setRentShowModal(false);
+  };
 
-//     // Validate ID
-//     if (isNaN(inputData.title_id)) {
-//       toast.error("Invalid title ID.");
-//       return;
-//     }
+   const handleBuyTicket = (movie: any) => {
+    setSelectedMovie(movie);
+    setIsTicketDialogOpen(true);
+  };
 
-//     // Save review
-//     const response = await saveReview(inputData);
+  const handlePlay = (movie) => {
+      const videos=movie.videos[0];
+      navigate("/watch", { state: { videos } });
+  }
+  
+const handleSubmitReview = async () => {
 
-//     if (response?.saveReview?.message === "success") {
-//       toast.success("Review submitted successfully!");
-//       await fetchReviews();
-//       setComment("");
-//       handleClose();
-//     } else {
-//       toast.error(`Submission failed: ${response?.saveReview?.message}`);
-//     }
-//   } catch (error) {
-//     console.error("Error submitting review:", error);
-//     toast.error("An error occurred while submitting the review.");
-//   }
+if (!userToken) {
+    toast.error("You need to log in to submit a review.");
+    return;
+  }
+
+  if (!rating || isNaN(rating) || rating < 1 || rating > 5) {
+    toast.error("Please provide a valid rating between 1 and 5.");
+    return;
+  }
+
+  try {
+    const inputData: SubmitInput = {
+      title_id: Number(movie?.id),
+      body: comment.trim(),
+      score: rating,
+      user_id: Number(user?.id),
+    };
+
+    // Validate ID
+    if (isNaN(inputData.title_id)) {
+      toast.error("Invalid title ID.");
+      return;
+    }
+
+    // Save review
+    const response = await saveReview(inputData);
+
+    if (response?.saveReview?.message === "success") {
+      toast.success("Review submitted successfully!");
+      await fetchReviews();
+      setComment("");
+      handleClose();
+    } else {
+      toast.error(`Submission failed: ${response?.saveReview?.message}`);
+    }
+  } catch (error) {
+    console.error("Error submitting review:", error);
+    toast.error("An error occurred while submitting the review.");
+  }
+}
 
 
 
@@ -167,7 +223,8 @@ const fetchReviews = async () => {
       .then((res) => {
         const data = res?.getTitleDetail?.data || null;
         setTitleData(data?.title[0]);
-        console.log("Fetched title detail:", data?.title?.[0]);
+        setMoreLikeThis(data?.more_like_this);
+        // console.log("Fetched title detail:",data?.more_like_this);
       })
       .catch((err) => {
         console.error('Failed to fetch title detail', err);
@@ -207,13 +264,92 @@ const fetchReviews = async () => {
   const shouldTruncate = fullText.split(" ").length > 20;
 
 
+  async function payRent(movie) {
+      if (!user?.id) {
+        toast("Login User !", { description: "Please Login First." });
+        window.location.href = "/login";
+        return false;
+      }
+  
+      try {
+        let payload = {
+          amount: movie?.getpayperwatch.amount,
+          userID: user?.id,
+          payperwatchID: movie?.getpayperwatch?.id,
+        };
+  
+        // setNewLoading(true);
+        const res = await fetch(
+          // `${process.env.NEXT_PUBLIC_API_BASEPATH_V2}/payrent-order`,
+          'https://stageconsole.hillypix.com/api/payrent-order',
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+          }
+        );
+  
+        const result = await res.json();
+  
+        if (result.status == false) {
+  
+          toast("API ISSUES !", { description: result.message });
+          // toast.error(result.message);
+        }
+  
+        const options = {
+          key: result.key,
+          amount: result.data.amount, // amount in paise
+          currency: "INR",
+          name: "Hillywood Private Limited",
+          description: "Hillywood Private Limited Rent Payment",
+          order_id: result.orderID,
+          prefill: {
+            email: user.email,
+            contact: user.mobile_number,
+          },
+          handler: async function (response) {
+            // console.log("response response response",response);
+            // setNewLoading(false);
+            toast("Successfully !", { description: "You’ve successfully rented this video. Enjoy watching!" });
+          //   toast({
+          //       title: "Successfully !",
+          //       description: "You’ve successfully rented this video. Enjoy watching!",
+          //  });
+            // toast.success(
+            //   "You’ve successfully rented this video. Enjoy watching!"
+            // );
+            setTimeout(() => {
+              location.reload();
+            }, 5000);
+          },
+  
+          modal: {
+            ondismiss: function () {
+              // setNewLoading(false);
+              alert("Payment popup closed by user");
+            },
+          },
+          theme: { color: "#ff5900ff" },
+        };
+  
+        const rzp = new Razorpay(options);
+  
+        rzp.open();
+      } catch (err) {
+        console.error("payRent error:", err);
 
+         toast("Payment initiation failed!", { description: "Payment initiation failed!" });
+        // toast({
+        //         title: "Payment initiation failed!",
+        //         description: "Payment initiation failed!",
+        //    });
 
-
-
-
-
-
+        // toast.error("Payment initiation failed!");
+      }
+    }
 
 
   return (
@@ -223,11 +359,29 @@ const fetchReviews = async () => {
       <section className="relative h-[520px] lg:h-[600px] overflow-hidden bannersectiondetail">
         {/* Background video/banner - prefer trailer, fallback to first video, then sample video */}
 
-        <div className="absolute inset-0 w-full h-full overflow-hidden" style={{
+        {/* <div className="absolute inset-0 w-full h-full overflow-hidden" style={{
           backgroundImage: `url(${
             titleData?.tv_banner || "src/assets/banner_placeholder.png"
           })`,
-        }}>
+
+
+          backgroundSize: 'cover',
+          backgroundRepeat: 'no-repeat',
+          backgroundPosition: 'center',
+
+        }}> */}
+
+        <div
+            className="absolute inset-0 w-full h-full overflow-hidden"
+            style={{
+              backgroundImage: `url(${titleData?.tv_banner || placeholderBanner})`,
+              backgroundSize: "cover",
+              backgroundRepeat: "no-repeat",
+              backgroundPosition: "center",
+            }}
+          >
+
+
           {titleData?.trailer_video_url && (
             <video
               className="absolute inset-0 w-full h-full object-cover"
@@ -255,7 +409,9 @@ const fetchReviews = async () => {
               <span>{titleData?.type || 'Item'}</span>
               <span>•</span>
               {(Array.isArray(titleData?.genres) ? titleData.genres : (titleData?.genres ? [titleData.genres] : [])).slice(0, 3).map((g: any, idx: number) => (<span key={idx}>{g}{idx < 2 ? ' • ' : ''}</span>))}
-              <span className="ml-2 inline-flex items-center bg-yellow-400 text-black px-2 py-0.5 rounded text-sm">⭐ {titleData?.review_avg ?? '—'}</span>
+              <span className="ml-2 inline-flex items-center bg-yellow-400 text-black px-2 py-0.5 rounded text-sm">⭐  {titleData?.review_avg
+                              ? titleData?.review_avg.toFixed(1)
+                              : 0}</span>
             </div>
 
             <p className="text-sm text-gray-200 max-w-prose mb-4">
@@ -273,12 +429,36 @@ const fetchReviews = async () => {
 
 
             <div className="flex items-center gap-3">
-              <button className="bg-[#410e7b] hover:bg-purple-950 px-5 py-2 rounded-md text-white flex items-center gap-2 text-sm">
+              {titleData?.getpayperwatch != null ? (
+              <button  onClick={() => {
+                  handleRentClose();
+                  handleBuyTicket(
+                    titleData
+                  );
+                }} className="bg-[#410e7b] hover:bg-purple-950 px-5 py-2 rounded-md text-white flex items-center gap-2 text-sm">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                   <path d="M4.5 3.5l11 6.5-11 6.5v-13z" />
                 </svg>
-                {titleData?.type === 'song' ? 'Play' : 'Subscribe to Watch'}
+                {'Buy Ticket'}
               </button>
+              ) : (
+
+                <button 
+
+                 onClick={() => {
+                  handlePlay(
+                    titleData
+                  );
+                }}
+                
+                className="bg-[#410e7b] hover:bg-purple-950 px-5 py-2 rounded-md text-white flex items-center gap-2 text-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M4.5 3.5l11 6.5-11 6.5v-13z" />
+                </svg>
+                {'Play'}
+              </button>
+
+               )}
 
               <button className="bg-[#410e7b] hover:bg-purple-950 border border-gray-700 px-2 py-2 rounded-md text-sm">
                 <BookmarkPlus className="w-[20px] h-[20px]" />
@@ -391,11 +571,24 @@ const fetchReviews = async () => {
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
 
-                  <div className="relative">
-                        <h3 className='text-white text-lg'>Rent : Season {titleData?.seasons?.[activeSeason]?.number}</h3>
-                        <p className='text-white'>Renting this season gives you access to watch all episodes up to 3 times within</p>
-                        <button className='absolute bottom-0 w-full bg-purple-600 text-white rounded-md py-2'>Rent</button>
-                  </div>
+                  {titleData?.seasons?.[activeSeason]?.getpayperwatch != null && (
+                      <div className="relative">
+                        <h3 className="text-white text-lg">
+                          Rent : Season {titleData?.seasons?.[activeSeason]?.number}
+                        </h3>
+
+                        <p className="text-white">
+                          Renting this season gives you access to watch all episodes up to 3 times within
+                        </p>
+
+                        <button 
+                        onClick={() => payRent(titleData?.seasons?.[activeSeason])}
+                        className="absolute bottom-0 w-full bg-purple-600 text-white rounded-md py-2">
+                          Buy Full Seasons
+                        </button>
+                      </div>
+                    )}
+
 
                   {titleData?.seasons?.[activeSeason]?.episodes?.map((ep: any) => (
                     <div
@@ -422,12 +615,24 @@ const fetchReviews = async () => {
               flex items-center justify-center transition-opacity duration-300
             "
                       >
-                        <button
-                          onClick={() => setVideoUrl(ep.videos?.[0]?.url || null)}
-                          className="px-4 py-2 bg-purple-600 text-white rounded-md text-sm"
-                        >
-                          ▶ Play
-                        </button>
+
+                       {titleData?.seasons?.[activeSeason]?.getpayperwatch != null ? (
+                      <button
+                        onClick={() => setVideoUrl(ep.videos?.[0]?.url || null)}
+                        className="px-4 py-2 bg-purple-600 text-white rounded-md text-sm"
+                      >
+                        Buy Full Seasons
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handlePlay(ep.videos)}
+                        className="px-4 py-2 bg-purple-600 text-white rounded-md text-sm"
+                      >
+                        ▶ Play
+                      </button>
+                    )}
+
+                        
 
 
                       </div>
@@ -537,7 +742,7 @@ const fetchReviews = async () => {
                         />
                         ):(
                         <img
-                          src="assets/image.webp"
+                          src="/images/usericon.png"
                           className="w-12 h-12 rounded-full object-cover"
                           alt="user"
                         />)
@@ -557,7 +762,7 @@ const fetchReviews = async () => {
                               </div>
                             </div>
 
-                            <span className="text-gray-400 text-sm">{review.created_at}</span>
+                            <span className="text-gray-400 text-sm">{dayjs(review.created_at).fromNow()}</span>
                           </div>
 
                           {/* Review Text */}
@@ -649,7 +854,7 @@ const fetchReviews = async () => {
         </button>
 
         <button
-          // onClick={handleSubmitReview}
+          onClick={handleSubmitReview}
           className="px-4 py-2 rounded-md bg-purple-700 hover:bg-purple-800 text-white"
         >
           Submit
@@ -681,60 +886,61 @@ const fetchReviews = async () => {
 
       </section>
 
-
-      <section className="max-w-6xl mx-auto px-6 lg:px-8 pb-20">
-        <h2 className="text-xl font-semibold mb-6">More Like This</h2>
-
-
-        <div className="relative">
-          <button
-            aria-label="prev"
-            onClick={() => scrollBy(-420)}
-            className="hidden sm:flex absolute left-0 top-1/2 -translate-y-1/2 z-20 h-10 w-10 items-center justify-center rounded-full bg-black/40 hover:bg-black/30">
-            ‹
-          </button>
+        {Array.isArray(morelikethis) && morelikethis.length > 0 && (
+        <section className="max-w-6xl mx-auto px-6 lg:px-8 pb-20">
+          <h2 className="text-xl font-semibold mb-6">More Like This</h2>
 
 
-          <div
-            ref={carouselRef}
-            className="flex gap-6 overflow-x-auto pb-4 scroll-smooth scrollbar-hide px-6 sm:px-12 overflow-x-hidden"
-            style={{ scrollBehavior: "smooth" }}>
-            {cards.map((c) => (
-              <div key={c.id} className="min-w-[220px] max-w-[220px] group relative rounded-lg overflow-hidden shadow-lg">
-                {/* Card image */}
-                <img src={c.image} alt={c.title} className="w-full h-[320px] object-cover transform group-hover:scale-105 transition-transform duration-300" />
+          <div className="relative">
+            <button
+              aria-label="prev"
+              onClick={() => scrollBy(-420)}
+              className="hidden sm:flex absolute left-0 top-1/2 -translate-y-1/2 z-20 h-10 w-10 items-center justify-center rounded-full bg-black/40 hover:bg-black/30">
+              ‹
+            </button>
 
 
-                {/* Hover overlay that appears from bottom */}
-                <div className="absolute left-0 right-0 bottom-0 translate-y-full group-hover:translate-y-0 transition-transform duration-300 bg-gradient-to-t from-black/85 to-transparent px-4 py-4">
-                  <h3 className="text-sm font-semibold">{c.title}</h3>
-                  <p className="text-xs text-gray-300 mt-1">{c.subtitle}</p>
-                  <div className="mt-3 flex items-center justify-between">
-                    <button className="bg-purple-600 px-3 py-1 text-xs rounded">Watch</button>
-                    <div className="text-xs text-gray-400">2024 • 2hr</div>
+            <div
+              ref={carouselRef}
+              className="flex gap-6 overflow-x-auto pb-4 scroll-smooth scrollbar-hide px-6 sm:px-12 overflow-x-hidden"
+              style={{ scrollBehavior: "smooth" }}>
+              {morelikethis.map((c) => (
+                <div key={c.id} className="min-w-[220px] max-w-[220px] group relative rounded-lg overflow-hidden shadow-lg">
+                  {/* Card image */}
+                  <img src={c.tv_portrait_image} alt={c.title} className="w-full h-[320px] object-cover transform group-hover:scale-105 transition-transform duration-300" />
+
+
+                  {/* Hover overlay that appears from bottom */}
+                  <div className="absolute left-0 right-0 bottom-0 translate-y-full group-hover:translate-y-0 transition-transform duration-300 bg-gradient-to-t from-black/85 to-transparent px-4 py-4">
+                    <h3 className="text-sm font-semibold">{c.title}</h3>
+                    <p className="text-xs text-gray-300 mt-1">{c.type}</p>
+                    <div className="mt-3 flex items-center justify-between">
+                      <button className="bg-purple-600 px-3 py-1 text-xs rounded">Watch</button>
+                      {/* <div className="text-xs text-gray-400">2024 • 2hr</div> */}
+                    </div>
                   </div>
+
+
+                  {/* play small bg-video layer for each card (optional) - we simply place a semi-transparent overlay to suggest video */}
+                  <div className="absolute inset-0 pointer-events-none bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 </div>
+              ))}
+            </div>
 
 
-                {/* play small bg-video layer for each card (optional) - we simply place a semi-transparent overlay to suggest video */}
-                <div className="absolute inset-0 pointer-events-none bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              </div>
-            ))}
+            <button
+              aria-label="next"
+              onClick={() => scrollBy(420)}
+              className="hidden sm:flex absolute right-0 top-1/2 -translate-y-1/2 z-20 h-10 w-10 items-center justify-center rounded-full bg-black/40 hover:bg-black/30">
+              ›
+            </button>
           </div>
-
-
-          <button
-            aria-label="next"
-            onClick={() => scrollBy(420)}
-            className="hidden sm:flex absolute right-0 top-1/2 -translate-y-1/2 z-20 h-10 w-10 items-center justify-center rounded-full bg-black/40 hover:bg-black/30">
-            ›
-          </button>
-        </div>
-      </section>
+        </section>
+        )}
 
 
 
-
+      {selectedMovie && <TicketPurchaseDialog open={isTicketDialogOpen} onOpenChange={setIsTicketDialogOpen} movie={selectedMovie} />}
 
 
       < Footer />

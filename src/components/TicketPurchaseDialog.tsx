@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { Ticket, Star, Clock, MapPin, CreditCard, Users, Calendar, Check } from 'lucide-react';
+import { getUser } from "@/lib/localAuth";
 
 function loadScript(src) {
   return new Promise((resolve) => {
@@ -35,7 +36,8 @@ interface TicketPurchaseDialogProps {
     tv_banner: string;
     tv_landscape_image: string;
     rating_avg:string;
-    runtime:string
+    runtime:string;
+    // getpayperwatch:Arr;
   };
 }
 
@@ -67,6 +69,7 @@ const ticketTypes = [
 ];
 
 const TicketPurchaseDialog = ({ open, onOpenChange, movie }: TicketPurchaseDialogProps) => {
+  const user = getUser();
   const { toast } = useToast();
   const [selectedTicket, setSelectedTicket] = useState('single');
   const [step, setStep] = useState(1); // 1: Select ticket, 2: Payment details, 3: Confirmation
@@ -103,6 +106,95 @@ const TicketPurchaseDialog = ({ open, onOpenChange, movie }: TicketPurchaseDialo
         console.log("Confirm this");
     }
   });
+
+   async function payRent() {
+      if (!user?.id) {
+         toast({
+            title: "Login User !",
+            description: `Please Login First.`,
+          });
+        window.location.href = "/login";
+        return false;
+      }
+  
+      try {
+        let payload = {
+          amount: movie?.getpayperwatch.amount,
+          userID: user?.id,
+          payperwatchID: movie?.getpayperwatch?.id,
+        };
+  
+        // setNewLoading(true);
+        const res = await fetch(
+          // `${process.env.NEXT_PUBLIC_API_BASEPATH_V2}/payrent-order`,
+          'https://stageconsole.hillypix.com/api/payrent-order',
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+          }
+        );
+  
+        const result = await res.json();
+  
+        if (result.status == false) {
+          toast({
+            title: "API ISSUES !",
+            description: result.message,
+          });
+          // toast.error(result.message);
+        }
+  
+        const options = {
+          key: result.key,
+          amount: result.data.amount, // amount in paise
+          currency: "INR",
+          name: "Hillywood Private Limited",
+          description: "Hillywood Private Limited Rent Payment",
+          order_id: result.orderID,
+          prefill: {
+            email: user.email,
+            contact: user.mobile_number,
+          },
+          handler: async function (response) {
+            // console.log("response response response",response);
+            // setNewLoading(false);
+            toast({
+                title: "Successfully !",
+                description: "You’ve successfully rented this video. Enjoy watching!",
+           });
+            // toast.success(
+            //   "You’ve successfully rented this video. Enjoy watching!"
+            // );
+            setTimeout(() => {
+              location.reload();
+            }, 5000);
+          },
+  
+          modal: {
+            ondismiss: function () {
+              // setNewLoading(false);
+              alert("Payment popup closed by user");
+            },
+          },
+          theme: { color: "#ff5900ff" },
+        };
+  
+        const rzp = new Razorpay(options);
+  
+        rzp.open();
+      } catch (err) {
+        console.error("payRent error:", err);
+        toast({
+                title: "Payment initiation failed!",
+                description: "Payment initiation failed!",
+           });
+
+        // toast.error("Payment initiation failed!");
+      }
+    }
 
 
 
@@ -219,10 +311,21 @@ const TicketPurchaseDialog = ({ open, onOpenChange, movie }: TicketPurchaseDialo
                 Cancel
               </Button>
               <Button
-                onClick={handleProceedToPayment}
+                // onClick={handleProceedToPayment}
+                // onClick={payRent()}
+
+                onClick={() => {
+                  onOpenChange(false);
+                  payRent(
+          
+                  );
+                }}
+
                 className="flex-1 theatre-gradient text-white hover:scale-105 theatre-transition"
               >
-                Proceed to Payment - ₹{selectedTicketType?.price}
+                Proceed to Payment - ₹{movie?.getpayperwatch?.amount}
+                
+                
               </Button>
             </div>
           </div>
