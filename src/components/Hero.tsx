@@ -10,7 +10,7 @@ const Hero = () => {
 
   
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+    <section className="relative md:min-h-screen min-h-[65vh] flex items-center justify-center overflow-hidden">
       {/* Background Theatre Image */}
       <div className="absolute inset-0 z-0">
         <img src={theatreHero} alt="Grand Cultural Theatre" className="w-full h-full object-cover" />
@@ -25,7 +25,7 @@ const Hero = () => {
       <div className="relative z-10 text-center max-w-4xl mx-auto px-6 animate-theatre-entrance">
         {/* Cultural Badge */}
         <Badge className="mb-6 theatre-gradient text-white px-6 py-2 text-sm font-medium tracking-wider">
-          🎭 {isMobile ? 'NE INDIA CINEMA' : 'NORTHEAST INDIA\'S CULTURAL CINEMA'}
+          {/* 🎭 {isMobile ? 'NE INDIA CINEMA' : 'NORTHEAST INDIA\'S CULTURAL CINEMA'} */}
         </Badge>
 
         {/* Main Title */}
