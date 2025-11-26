@@ -19,6 +19,7 @@ import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 dayjs.extend(relativeTime);
 import placeholderBanner from "@/assets/banner_placeholder.png";
+import { title } from 'process';
 
 
 const reviews = [
@@ -479,32 +480,54 @@ const handleShow = () => {
 
 
             <div className="flex items-center gap-3">
-             {titleData?.type != "tvSeries" && (
-                titleData?.getpayperwatch ? (
-                  <button  
-                    onClick={() => {
-                      handleRentClose();
-                      handleBuyTicket(titleData);
-                    }} 
+            {titleData?.type !== "tvSeries" && (
+
+                !user ? (
+                  // 👉 USER NOT LOGGED IN — Show Login Button
+                  <button
+                 onClick={() => {
+                       toast("Login..!", { description: "Please Login to Watch..!" });
+                      return;
+                    }}
                     className="bg-[#410e7b] hover:bg-purple-950 px-5 py-2 rounded-md text-white flex items-center gap-2 text-sm"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                      <path d="M4.5 3.5l11 6.5-11 6.5v-13z" />
+                      <path d="M3 10h12M10 3l5 7-5 7" />
                     </svg>
-                    Buy Ticket
+                    Login to Watch
                   </button>
                 ) : (
-                  <button 
-                    onClick={() => handlePlay(titleData)}
-                    className="bg-[#410e7b] hover:bg-purple-950 px-5 py-2 rounded-md text-white flex items-center gap-2 text-sm"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                      <path d="M4.5 3.5l11 6.5-11 6.5v-13z" />
-                    </svg>
-                    Play
-                  </button>
+
+                  // 👉 USER LOGGED IN — original logic
+                  titleData?.getpayperwatch ? (
+                    <button  
+                      onClick={() => {
+                        handleRentClose();
+                        handleBuyTicket(titleData);
+                      }} 
+                      className="bg-[#410e7b] hover:bg-purple-950 px-5 py-2 rounded-md text-white flex items-center gap-2 text-sm"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M4.5 3.5l11 6.5-11 6.5v-13z" />
+                      </svg>
+                      Buy Ticket
+                    </button>
+                  ) : (
+                    <button 
+                      onClick={() => handlePlay(titleData)}
+                      className="bg-[#410e7b] hover:bg-purple-950 px-5 py-2 rounded-md text-white flex items-center gap-2 text-sm"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M4.5 3.5l11 6.5-11 6.5v-13z" />
+                      </svg>
+                      Play
+                    </button>
+                  )
+
                 )
+
               )}
+
 
 
               {/* <button className="bg-[#410e7b] hover:bg-purple-950 border border-gray-700 px-2 py-2 rounded-md text-sm">

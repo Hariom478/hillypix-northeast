@@ -293,9 +293,10 @@ const CulturalLibrary = () => {
             >
               {listItem.name}
 
+            
               {!isMobile && (
                 <Badge variant="secondary" className="ml-2 text-xs">
-                  {listItem.listable?.length || 0}
+                  {listItem.listable?.length || 'All'}
                 </Badge>
               )}
             </Button>
@@ -335,11 +336,11 @@ const CulturalLibrary = () => {
                         <div className="absolute top-3 left-3 right-3 flex justify-between items-start">
 
                           <div className="flex gap-2">
-                            {movie?.is_title_rent_by_user == 1 && (
+                            {/* {movie?.is_title_rent_by_user == 1 && (
                               <Badge className="bg-golden text-black text-xs font-semibold">
                                 Owned
                               </Badge>
-                            )}
+                            )} */}
                           </div>
                           {movie?.rating_avg && (
                             <div className="flex items-center space-x-1 bg-black/60 px-2 py-1 rounded-full">
