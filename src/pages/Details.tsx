@@ -648,7 +648,7 @@ const handleShow = () => {
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
 
                   {titleData?.seasons?.[activeSeason]?.getpayperwatch != null && (
-                    <div className="relative h-[11.3rem]">
+                    <div className="relative h-[12rem]">
                       <h3 className="text-white text-lg">
                         Rent : Season {titleData?.seasons?.[activeSeason]?.number}
                       </h3>
@@ -669,18 +669,18 @@ const handleShow = () => {
                   {titleData?.seasons?.[activeSeason]?.episodes?.map((ep: any) => (
                     <div
                       key={ep.id}
-                      className="group relative rounded-lg overflow-hidden border border-gray-800 bg-[#0b0b0f]"
+                      className="group relative rounded-lg overflow-hidden border border-transparent hover:border hover:border-gray-800 bg-[#0b0b0f]"
                     >
 
                       {/* Thumbnail Image */}
                       <img
                         src={ep.poster || "/default-episode.jpg"}
-                        className="w-full h-36 object-cover"
+                        className="w-full h-[12rem] object-cover"
                         alt={ep.name}
                       />
 
                       {/* Bottom Episode Name */}
-                      <div className="p-2 text-sm font-medium text-gray-200">
+                      <div className="p-2 text-sm text-center font-medium text-gray-200">
                         {ep.name}
                       </div>
 
