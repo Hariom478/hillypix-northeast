@@ -351,7 +351,7 @@ const CulturalLibrary = () => {
                       )}
                       {isMobile && (
                       <div className={`absolute inset-0 flex items-center justify-center cursor-pointer
-                            ${isMobile ? "bg-black/40 opacity-100" : "bg-black/60 opacity-0 group-hover:opacity-100 theatre-transition"}`}
+                            ${isMobile ? "opacity-100" : "bg-black/60 opacity-0 group-hover:opacity-100 theatre-transition"}`}
                             onClick={() => handlePlay(movie)}
                           >
                             <div className="w-8 h-8 rounded-full bg-golden flex items-center justify-center">
