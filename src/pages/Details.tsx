@@ -226,6 +226,7 @@ if (!userToken) {
         const data = res?.getTitleDetail?.data || null;
         setTitleData(data?.title[0]);
         setMoreLikeThis(data?.more_like_this);
+        // setLoading(true)
         // console.log("Fetched title detail:",data?.more_like_this);
       })
       .catch((err) => {
@@ -359,21 +360,11 @@ if (!userToken) {
       <Header />
 
       <section className="relative h-[520px] lg:h-[600px] overflow-hidden bannersectiondetail">
-        {/* Background video/banner - prefer trailer, fallback to first video, then sample video */}
+        {loading ? (
+          <div className="h-[520px] lg:h-[600px] bg-[#111] animate-pulse"></div>
+        ) : (
 
-        {/* <div className="absolute inset-0 w-full h-full overflow-hidden" style={{
-          backgroundImage: `url(${
-            titleData?.tv_banner || "src/assets/banner_placeholder.png"
-          })`,
-
-
-          backgroundSize: 'cover',
-          backgroundRepeat: 'no-repeat',
-          backgroundPosition: 'center',
-
-        }}> */}
-
-        <div
+          <div
             className="absolute inset-0 w-full h-full overflow-hidden"
             style={{
               backgroundImage: `url(${titleData?.tv_banner || placeholderBanner})`,
@@ -382,8 +373,6 @@ if (!userToken) {
               backgroundPosition: "center",
             }}
           >
-
-
           {titleData?.trailer_video_url && (
             <video
               className="absolute inset-0 w-full h-full object-cover"
@@ -396,8 +385,9 @@ if (!userToken) {
           )}
         </div>
 
+        )}
 
-
+      
         {/* Gradient fade at bottom */}
         <div className="absolute inset-0 bg-gradient-to-b from-transparent" />
 
@@ -431,40 +421,37 @@ if (!userToken) {
 
 
             <div className="flex items-center gap-3">
-              {titleData?.getpayperwatch != null ? (
-              <button  onClick={() => {
-                  handleRentClose();
-                  handleBuyTicket(
-                    titleData
-                  );
-                }} className="bg-[#410e7b] hover:bg-purple-950 px-5 py-2 rounded-md text-white flex items-center gap-2 text-sm">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                  <path d="M4.5 3.5l11 6.5-11 6.5v-13z" />
-                </svg>
-                {'Buy Ticket'}
-              </button>
-              ) : (
+             {titleData?.type != "tvSeries" && (
+                titleData?.getpayperwatch ? (
+                  <button  
+                    onClick={() => {
+                      handleRentClose();
+                      handleBuyTicket(titleData);
+                    }} 
+                    className="bg-[#410e7b] hover:bg-purple-950 px-5 py-2 rounded-md text-white flex items-center gap-2 text-sm"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                      <path d="M4.5 3.5l11 6.5-11 6.5v-13z" />
+                    </svg>
+                    Buy Ticket
+                  </button>
+                ) : (
+                  <button 
+                    onClick={() => handlePlay(titleData)}
+                    className="bg-[#410e7b] hover:bg-purple-950 px-5 py-2 rounded-md text-white flex items-center gap-2 text-sm"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                      <path d="M4.5 3.5l11 6.5-11 6.5v-13z" />
+                    </svg>
+                    Play
+                  </button>
+                )
+              )}
 
-                <button 
 
-                 onClick={() => {
-                  handlePlay(
-                    titleData
-                  );
-                }}
-                
-                className="bg-[#410e7b] hover:bg-purple-950 px-5 py-2 rounded-md text-white flex items-center gap-2 text-sm">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                  <path d="M4.5 3.5l11 6.5-11 6.5v-13z" />
-                </svg>
-                {'Play'}
-              </button>
-
-               )}
-
-              <button className="bg-[#410e7b] hover:bg-purple-950 border border-gray-700 px-2 py-2 rounded-md text-sm">
+              {/* <button className="bg-[#410e7b] hover:bg-purple-950 border border-gray-700 px-2 py-2 rounded-md text-sm">
                 <BookmarkPlus className="w-[20px] h-[20px]" />
-              </button>
+              </button> */}
               
             </div>
 
