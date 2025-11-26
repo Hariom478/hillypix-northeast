@@ -6,7 +6,7 @@ const Footer = () => {
   const isMobile = useIsMobile();
 
   return (
-    <footer className="bg-card-accent/50 border-t border-border/20 py-12 px-6">
+    <footer className="bg-card-accent/50 border-t border-border/20 py-12 md:px-6">
       <div className="container mx-auto">
         {isMobile ? (
           <>

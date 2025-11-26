@@ -450,9 +450,9 @@ const handleShow = () => {
         {/* Gradient fade at bottom */}
         <div className="absolute inset-0 bg-gradient-to-b from-transparent" />
 
-
+        
         {/* Content overlay */}
-        <div className="relative z-10 max-w-6xl mx-auto px-6 lg:px-8 h-full flex flex-col justify-center">
+        <div className="container relative z-10 px-6 lg:px-8 h-full flex flex-col justify-center">
           <div className="w-full md:w-10/12 lg:w-8/12">
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight mb-3">{titleData?.title}</h1>
 
@@ -539,11 +539,16 @@ const handleShow = () => {
             {/* small caption overlay like in screenshot */}
           </div>
         </div>
+
+
       </section>
 
 
       {/* Tabs section */}
-      <section className="max-w-6xl mx-auto px-6 lg:px-8 py-8">
+      <section className="px-6 lg:px-8 py-8">
+        
+        <div className="container">
+        
         <div className="bg-transparent border-b border-gray-800 pb-4">
           <div className="flex py-5 border-b border-gray-500">
             {titleData?.type === "tvSeries" && titleData?.seasons?.length ? (
@@ -946,7 +951,7 @@ const handleShow = () => {
         </div>
 
 
-
+</div>
 
 
 
@@ -956,8 +961,9 @@ const handleShow = () => {
       </section>
 
       {Array.isArray(morelikethis) && morelikethis.length > 0 && (
-        <section className="max-w-6xl mx-auto px-6 lg:px-8 pb-20">
-          <h2 className="text-xl font-semibold mb-6">More Like This</h2>
+        <section className="px-6 lg:px-8 pb-20">
+          <div className="container mx-auto">
+            <h2 className="text-xl font-semibold mb-6">More Like This</h2>
 
 
           <div className="relative">
@@ -1004,6 +1010,8 @@ const handleShow = () => {
               ›
             </button>
           </div>
+          </div>
+
         </section>
       )}
 

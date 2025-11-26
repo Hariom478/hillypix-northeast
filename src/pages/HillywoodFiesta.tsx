@@ -47,7 +47,7 @@ const HillywoodFiesta = () => {
         </section>
 
         {/* About Hillywood Fiesta */}
-        <section className="py-20 px-6 bg-card-accent/20">
+        <section className="md:py-20 py-10 md:px-6 bg-card-accent/20">
           <div className="container mx-auto max-w-6xl">
             <div className="grid md:grid-cols-2 gap-12 items-center">
               <div className="w-full">
@@ -85,7 +85,7 @@ const HillywoodFiesta = () => {
         </section>
 
         {/* Hillywood Fiesta Awards */}
-        <section className="py-20 px-6">
+        <section className="md:py-20 py-10 md:px-6">
           <div className="container mx-auto max-w-6xl">
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-anton mb-12 text-center text-foreground">
               Hillywood Fiesta Awards
@@ -133,7 +133,7 @@ const HillywoodFiesta = () => {
         </section>
 
         {/* Award Winners Gallery */}
-        <section className="py-20 px-6 bg-gradient-to-b from-background to-card-accent/20">
+        <section className="md:py-20 py-10 md:px-6 bg-gradient-to-b from-background to-card-accent/20">
           <div className="container mx-auto max-w-6xl">
             <div className="text-center mb-12">
               <h2 className="text-3xl md:text-4xl lg:text-5xl font-anton mb-6 text-foreground">
@@ -193,7 +193,7 @@ const HillywoodFiesta = () => {
         </section>
 
         {/* Red Carpet Moments */}
-        <section className="py-20 px-6">
+        <section className="md:py-20 py-10 md:px-6">
           <div className="container mx-auto max-w-6xl">
             <div className="text-center mb-12">
               <h2 className="text-3xl md:text-4xl lg:text-5xl font-anton mb-6 text-foreground">
@@ -218,7 +218,7 @@ const HillywoodFiesta = () => {
         </section>
 
         {/* CTA Section */}
-        <section className="py-20 px-6 bg-primary">
+        <section className="md:py-20 py-10 md:px-6 bg-primary">
           <div className="container mx-auto text-center max-w-4xl">
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-anton mb-6 text-primary-foreground">
               Be Part of the Red Carpet Experience

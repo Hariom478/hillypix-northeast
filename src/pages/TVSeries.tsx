@@ -331,7 +331,7 @@ const TVSeries = () => {
 
       <main className="pt-24">
         {/* Page Header */}
-        <section className="py-16 px-6 text-center bg-gradient-to-b from-card-accent/20 to-background">
+        <section className="md:py-16 py-6 md:px-6 text-center bg-gradient-to-b from-card-accent/20 to-background">
           <div className="container mx-auto">
             <Badge className="mb-4 bg-golden/20 text-golden px-4 py-2">
               📺 TV SERIES
@@ -352,7 +352,7 @@ const TVSeries = () => {
 
         {/* Continue Watching */}
         {continueWatching.length > 0 && (
-          <section className="py-16 px-6">
+          <section className="py-16 md:px-6">
             <div className="container mx-auto">
               <h2 className="text-3xl font-bold mb-8 text-foreground">Continue Watching</h2>
               <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">

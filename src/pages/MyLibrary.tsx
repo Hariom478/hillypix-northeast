@@ -107,7 +107,7 @@ const MyLibrary = () => {
       
       <main className="pt-24">
         {/* Page Header */}
-        <section className="py-16 px-6 text-center">
+        <section className="md:py-16 py-5 md:px-6 text-center">
           <div className="container mx-auto">
             <Badge className="mb-4 bg-golden/20 text-golden px-4 py-2">
               📖 MY LIBRARY
@@ -126,7 +126,7 @@ const MyLibrary = () => {
         </section>
 
         {/* Library Content */}
-        <section className="py-16 px-6">
+        <section className="md:py-16 py-5 md:px-6">
           <div className="container mx-auto">
             <Tabs value={selectedTab} onValueChange={setSelectedTab} className="mb-8">
               <TabsList className="grid w-full max-w-md mx-auto grid-cols-3 bg-card-accent/50">

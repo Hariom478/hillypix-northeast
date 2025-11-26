@@ -268,7 +268,7 @@ const handleLanguageChange = (lang) => {
       
       <main className="pt-24">
         {/* Page Header */}
-        <section className="py-16 px-6 text-center bg-gradient-to-b from-card-accent/20 to-background">
+        <section className="py-16 md:px-6 text-center bg-gradient-to-b from-card-accent/20 to-background">
           <div className="container mx-auto">
             <Badge className="mb-4 bg-golden/20 text-golden px-4 py-2">
               🎵 MUSIC VIDEOS
@@ -311,7 +311,7 @@ const handleLanguageChange = (lang) => {
 
         {/* State Filter (shown only in By State tab) */}
         {/* {selectedTab === 'state' && ( */}
-          <section className="py-6 px-6 bg-card-accent/10">
+          <section className="py-6 md:px-6 bg-card-accent/10">
             <div className="container mx-auto">
               <div className={`${isMobile ? 'grid grid-cols-2 gap-2' : 'flex flex-wrap gap-2 justify-center'}`}>
                 {languages.map((state) => (
@@ -330,7 +330,7 @@ const handleLanguageChange = (lang) => {
         {/* )} */}
 
         {/* Music Videos Grid */}
-        <section className="py-16 px-6">
+        <section className="md:py-16 py-5 md:px-6">
           <div className="container mx-auto">
             <div className={`grid ${isMobile ? 'grid-cols-3 gap-2' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'}`}>
               {movies.map((video) => (

@@ -47,7 +47,7 @@ const AboutHillyWood = () => {
   const isMobile = useIsMobile();
 
   return (
-    <section className={`${isMobile ? 'py-12' : 'py-20'} px-6 relative overflow-hidden`}>
+    <section className={`${isMobile ? 'py-5' : 'px-6 py-20'}  relative overflow-hidden`}>
       {/* Background Pattern */}
       <div className="absolute inset-0 cultural-pattern opacity-5"></div>
       
