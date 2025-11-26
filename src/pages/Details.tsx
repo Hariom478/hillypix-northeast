@@ -545,7 +545,7 @@ const handleShow = () => {
 
 
       {/* Tabs section */}
-      <section className="px-6 lg:px-8 py-8">
+      <section className="md:px-6 lg:px-8 py-8">
         
         <div className="container">
         
@@ -961,7 +961,7 @@ const handleShow = () => {
       </section>
 
       {Array.isArray(morelikethis) && morelikethis.length > 0 && (
-        <section className="px-6 lg:px-8 pb-20">
+        <section className="md:px-6 lg:px-8 md:pb-20 pb-10">
           <div className="container mx-auto">
             <h2 className="text-xl font-semibold mb-6">More Like This</h2>
 

@@ -332,7 +332,7 @@ const handleLanguageChange = (lang) => {
         {/* Music Videos Grid */}
         <section className="md:py-16 py-5 md:px-6">
           <div className="container mx-auto">
-            <div className={`grid ${isMobile ? 'grid-cols-3 gap-2' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'}`}>
+            <div className={`grid ${isMobile ? 'grid-cols-2 gap-2' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'}`}>
               {movies.map((video) => (
                 <Card 
                   key={video.id}
@@ -380,7 +380,18 @@ const handleLanguageChange = (lang) => {
                           )}
                         </div>
                       )}
-
+                      
+                      {isMobile && (
+                      <div 
+                          className={`absolute inset-0 flex items-center justify-center cursor-pointer
+                          ${isMobile ? "bg-black/40 opacity-100" : "bg-black/60 opacity-0 group-hover:opacity-100 theatre-transition"}`}
+                          onClick={() => handlePlayVideo(video)}
+                        >
+                          <div className="w-8 h-8 rounded-full bg-golden flex items-center justify-center">
+                            <Play className="w-4 h-4 text-black fill-black ml-1" />
+                          </div>
+                        </div>
+                      )}
                       {/* Play Overlay - Desktop only */}
                       {!isMobile && (
                         <div 

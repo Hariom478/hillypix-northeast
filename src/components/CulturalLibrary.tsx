@@ -314,7 +314,7 @@ const CulturalLibrary = () => {
           <TabsContent key={list.id} value={list.id} className="mt-8">
 
 
-            <div className={`grid ${isMobile ? 'grid-cols-3 gap-2' : 'md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'}`}>
+            <div className={`grid ${isMobile ? 'grid-cols-2 gap-2' : 'md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'}`}>
 
               {movies?.map(movie => (
                 <Card
@@ -348,6 +348,16 @@ const CulturalLibrary = () => {
                             </div>
                           )}
                         </div>
+                      )}
+                      {isMobile && (
+                      <div className={`absolute inset-0 flex items-center justify-center cursor-pointer
+                            ${isMobile ? "bg-black/40 opacity-100" : "bg-black/60 opacity-0 group-hover:opacity-100 theatre-transition"}`}
+                            onClick={() => handlePlay(movie)}
+                          >
+                            <div className="w-8 h-8 rounded-full bg-golden flex items-center justify-center">
+                              <Play className="w-4 h-4 text-black fill-black ml-1" />
+                            </div>
+                          </div>
                       )}
 
                       {/* Play Button */}
