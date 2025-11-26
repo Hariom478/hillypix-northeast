@@ -65,9 +65,9 @@ const VideoPlayerPage = () => {
           time: formatTime(v.currentTime),
         };
 
-        await Api("/save-video-resume-position", "POST", reqData);
+        await Api( `${import.meta.env.VITE_API_BASEPATH_V2}/save-video-resume-position`, "POST", reqData);
 
-        await Api("/pay-watch-video-time", "POST", {
+        await Api(`${import.meta.env.VITE_API_BASEPATH_V2}/pay-watch-video-time`, "POST", {
           ...reqData,
           played_seconds: unsaved,
           total_played_seconds: Math.floor(totalPlayedSeconds.current),
@@ -130,7 +130,7 @@ const VideoPlayerPage = () => {
 
       (async () => {
         try {
-          const res = await Api("/rent-available", "POST", {
+          const res = await Api(`${import.meta.env.VITE_API_BASEPATH_V2}/rent-available`, "POST", {
             user_id: user?.id,
             title_id: movie?.title_id,
           });

@@ -227,7 +227,7 @@ const fetchData = async (lang, user_id) => {
     language: lang && lang !== "All" ? lang : "All", // Default to "All"
   };
 
-  const res = await Api("/web-home-page", "POST", body, undefined, { cache: "no-store" });
+  const res = await Api(`${import.meta.env.VITE_API_BASEPATH_V2}/web-home-page`, "POST", body, undefined, { cache: "no-store" });
   const data = await res.json();
   console.log("Every Time Data Render ", data);
   return data;

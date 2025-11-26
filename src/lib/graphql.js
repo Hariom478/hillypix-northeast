@@ -1,7 +1,8 @@
 import { GraphQLClient as GraphQLClientInstence } from "graphql-request";
 import Cookies from "js-cookie";
 // const endpoint = "https://backend.hillypix.com/public/graphql";
-const endpoint = "https://stageconsole.hillypix.com/public/graphql";
+// const endpoint = "https://stageconsole.hillypix.com/public/graphql";
+const endpoint = `${import.meta.env.VITE_API_BASEPATH}`;
 const graphQLClient = new GraphQLClientInstence(endpoint, {
   cache: "no-store",
 });

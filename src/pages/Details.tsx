@@ -327,6 +327,7 @@ const handleShow = () => {
 
 
   async function payRent(movie) {
+  
     if (!user?.id) {
       toast("Login User !", { description: "Please Login First." });
       window.location.href = "/login";
@@ -342,8 +343,8 @@ const handleShow = () => {
 
       // setNewLoading(true);
       const res = await fetch(
-        // `${process.env.NEXT_PUBLIC_API_BASEPATH_V2}/payrent-order`,
-        'https://stageconsole.hillypix.com/api/payrent-order',
+        `${import.meta.env.VITE_API_BASEPATH_V2}/payrent-order`,
+        // 'https://stageconsole.hillypix.com/api/payrent-order',
         {
           method: "POST",
           headers: {
