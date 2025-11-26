@@ -24,7 +24,7 @@ const VideoPlayerPage = () => {
   // UI states
   const [duration, setDuration] = useState(0);
   const [progress, setProgress] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(true);
   const [isRentExpired, setRentExpired] = useState(false);
 
   if (!movie) {
