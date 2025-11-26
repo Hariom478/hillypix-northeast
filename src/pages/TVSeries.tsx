@@ -1,4 +1,4 @@
-import { useState,useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import { Button } from '@/components/ui/button';
@@ -160,12 +160,12 @@ const tvSeriesData = [
 ];
 
 const TVSeries = () => {
- const user = getUser();
+  const user = getUser();
   const [selectedTab, setSelectedTab] = useState('all');
   const [selectedSeries, setSelectedSeries] = useState<any>(null);
   const [isTicketDialogOpen, setIsTicketDialogOpen] = useState(false);
   const [expandedSeries, setExpandedSeries] = useState<number | null>(null);
-  const { addToWatchlist, removeFromWatchlist, isInWatchlist } = useWatchlist(user?.id,'tvSeries');
+  const { addToWatchlist, removeFromWatchlist, isInWatchlist } = useWatchlist(user?.id, 'tvSeries');
   const { getContinueWatching, getProgress } = useWatchProgress();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -205,33 +205,33 @@ const TVSeries = () => {
 
     if (!user) {
       toast({ title: "Login Required", description: "Please login first." });
-      navigate("/login");
+      // navigate("/login");
       return;
     }
 
     const updatedWatchStatus = video.is_user_watched == 1 ? 0 : 1;
 
-      // 🔥 Update local UI immediately
-      setMovies(prev =>
-        prev.map(item =>
-          item.id === video.id ? { ...item, is_user_watched: updatedWatchStatus } : item
-        )
-      );
+    // 🔥 Update local UI immediately
+    setMovies(prev =>
+      prev.map(item =>
+        item.id === video.id ? { ...item, is_user_watched: updatedWatchStatus } : item
+      )
+    );
 
-      // Backend call (optional)
-      if (updatedWatchStatus === 1) {
-        addToWatchlist(video);
-        toast({
-          title: "Added to Watchlist",
-          description: `${video.title} added to your watchlist.`,
-        });
-      } else {
-        removeFromWatchlist(Number(video.id));
-        toast({
-          title: "Removed from Watchlist",
-          description: `${video.title} removed from your watchlist.`,
-        });
-      }
+    // Backend call (optional)
+    if (updatedWatchStatus === 1) {
+      addToWatchlist(video);
+      toast({
+        title: "Added to Watchlist",
+        description: `${video.title} added to your watchlist.`,
+      });
+    } else {
+      removeFromWatchlist(Number(video.id));
+      toast({
+        title: "Removed from Watchlist",
+        description: `${video.title} removed from your watchlist.`,
+      });
+    }
 
     // e.stopPropagation();
     // if (video?.is_watchlist) {
@@ -252,7 +252,7 @@ const TVSeries = () => {
   };
 
   const handleBuySeries = (series: any) => {
-    const videos=series;
+    const videos = series;
     navigate("/details", { state: { videos } });
     // setSelectedSeries(series);
     // setIsTicketDialogOpen(true);
@@ -275,32 +275,32 @@ const TVSeries = () => {
   };
 
   const continueWatching = getContinueWatching();
-  const filteredSeries = selectedTab === 'all' 
-    ? tvSeriesData 
+  const filteredSeries = selectedTab === 'all'
+    ? tvSeriesData
     : tvSeriesData.filter(s => s.genre.toLowerCase() === selectedTab);
 
 
-  
+
   useEffect(() => {
-    getHomePage(user?.id,'tvSeries').then(data => {
-  
-     const fetchedLists = data?.getHomePage?.data?.list || [];
+    getHomePage(user?.id, 'tvSeries').then(data => {
+
+      const fetchedLists = data?.getHomePage?.data?.list || [];
       const filteredLists = fetchedLists.filter(list =>
         list.listable?.some(item => item?.title)
       );
-  
+
       // Add "All" category at top
       const listsWithAll = [{ id: "all", name: "All" }, ...filteredLists];
-  
+
       setLists(listsWithAll);
-  
+
       // Collect all movies from every listable
       const mergedMovies = fetchedLists.flatMap(list =>
         list.listable
           ?.filter(item => item?.title)
           .map(item => item.title) || []
       );
-  
+
       setAllMovies(mergedMovies);
       setSelectedListId("all");
       setMovies(mergedMovies);
@@ -308,27 +308,27 @@ const TVSeries = () => {
   }, []);
 
   const handleGenreChange = (id) => {
-  setSelectedListId(id);
+    setSelectedListId(id);
 
-  if (id === "all") {
-    setMovies(allMovies);
-    return;
-  }
+    if (id === "all") {
+      setMovies(allMovies);
+      return;
+    }
 
-  const selectedList = lists.find(l => l.id === id);
+    const selectedList = lists.find(l => l.id === id);
 
-  setMovies(
-    selectedList?.listable
-      ?.filter(item => item?.title)
-      ?.map(item => item.title) 
-    || []
-  );
-};
+    setMovies(
+      selectedList?.listable
+        ?.filter(item => item?.title)
+        ?.map(item => item.title)
+      || []
+    );
+  };
 
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      
+
       <main className="pt-24">
         {/* Page Header */}
         <section className="py-16 px-6 text-center bg-gradient-to-b from-card-accent/20 to-background">
@@ -344,7 +344,7 @@ const TVSeries = () => {
               Web Series
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Watch episodic shows and web series from Northeast India. Watch the first episode free, 
+              Watch episodic shows and web series from Northeast India. Watch the first episode free,
               then buy individual episodes or the full series.
             </p>
           </div>
@@ -365,8 +365,8 @@ const TVSeries = () => {
                     <Card key={`${series.id}-${episode.id}`} className="group bg-card-accent/30 border-border/20 hover:border-golden/30 theatre-transition overflow-hidden cursor-pointer">
                       <CardContent className="p-0">
                         <div className="relative">
-                          <img 
-                            src={series.poster} 
+                          <img
+                            src={series.poster}
                             alt={series.title}
                             className="w-full h-48 object-cover group-hover:scale-105 theatre-transition"
                           />
@@ -378,7 +378,7 @@ const TVSeries = () => {
                           </div>
                           {/* Progress Bar */}
                           <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/60">
-                            <div 
+                            <div
                               className="h-full bg-golden"
                               style={{ width: `${progress.progress}%` }}
                             />
@@ -400,25 +400,25 @@ const TVSeries = () => {
         )}
 
         {/* Category Tabs */}
-        <section className="py-16 px-6">
+        <section className="py-16 md:px-6">
           <div className="container mx-auto">
 
-            <Tabs value={selectedListId}  className="mb-8">
-            <TabsList 
-              className={`grid w-full ${isMobile ? 'grid-cols-3' : 'max-w-2xl mx-auto grid-cols-5'} bg-card-accent/50`}
-            >
-              {lists.map((item) => (
-                <TabsTrigger 
-                  key={item.id} 
-                  value={item.id}
-                  className={isMobile ? "text-xs" : ""}
-                   onClick={() => handleGenreChange(item.id)}
-                >
-                  {isMobile && item.name ? item.name : item.name}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
+            <Tabs value={selectedListId} className="mb-8">
+              <TabsList
+                className={`grid w-full ${isMobile ? 'grid-cols-3' : 'max-w-2xl mx-auto grid-cols-5'} bg-card-accent/50`}
+              >
+                {lists.map((item) => (
+                  <TabsTrigger
+                    key={item.id}
+                    value={item.id}
+                    className={isMobile ? "text-xs" : ""}
+                    onClick={() => handleGenreChange(item.id)}
+                  >
+                    {isMobile && item.name ? item.name : item.name}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
 
 
             {/* <Tabs value={selectedTab} onValueChange={setSelectedTab} className="mb-8">
@@ -433,186 +433,190 @@ const TVSeries = () => {
             </Tabs> */}
 
             {/* Series Grid */}
-            
+
 
             <div className="space-y-8">
-  {movies.map((series) => {
-    const isExpanded = expandedSeries === series.id;
-    const progress = getProgress(series.id, 1);
+              {movies.map((series) => {
+                const isExpanded = expandedSeries === series.id;
+                const progress = getProgress(series.id, 1);
 
-    return (
-      <Card key={series.id} className="bg-card-accent/30 border-border/20 overflow-hidden">
-        <CardContent className="p-0">
-          <div className="md:flex">
-            
-            {/* Poster */}
-            <div className="md:w-64 relative">
-              <img 
-                src={series?.tv_portrait_image || series?.tv_banner || series?.tv_landscape_image} 
-                alt={series.title}
-                className="w-full h-96 md:h-full object-cover"
-              />
-              <div className="absolute top-3 left-3 right-3 flex justify-between items-start">
-                <Badge className="bg-golden text-black text-xs font-semibold">
-                  S{series?.seasons?.length || 1}
-                </Badge>
-                {series?.rating_avg && (
-                  <div className="flex items-center space-x-1 bg-black/60 backdrop-blur-sm px-2 py-1 rounded-full">
-                    <Star className="w-3 h-3 text-golden fill-current" />
-                    <span className="text-xs text-white font-medium">{series?.rating_avg}</span>
-                  </div>
-                )}
-              </div>
-            </div>
+                return (
+                  <Card key={series.id} className="bg-card-accent/30 border-border/20 overflow-hidden">
+                    <CardContent className="p-0">
+                      <div className="md:flex">
 
-            {/* Info */}
-            <div className="flex-1 p-6">
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <h2 className="text-2xl font-bold text-foreground mb-2">{series?.title}</h2>
-                  <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground mb-3">
-                    {/* <Badge variant="secondary">{series?.state}</Badge> */}
-                    <span>{series?.release_date}</span>
-                    <span>•</span>
-                    <span>{series?.genres}</span>
-                    <span>•</span>
-                    <span>{series?.language}</span>
-                    <span>•</span>
-                    <span>{series?.total_episode_count} Episodes</span>
-                  </div>
-                  <p className="text-muted-foreground mb-4 max-w-2xl">
-                    {series?.overview}
-                  </p>
-                </div>
+                        {/* Poster */}
+                        <div className="md:w-64 relative">
+                          <img
+                            src={series?.tv_portrait_image || series?.tv_banner || series?.tv_landscape_image}
+                            alt={series.title}
+                            className="w-full h-96 md:h-full object-cover"
+                          />
+                          <div className="absolute top-3 left-3 right-3 flex justify-between items-start">
+                            <Badge className="bg-golden text-black text-xs font-semibold">
+                              S{series?.seasons?.length || 1}
+                            </Badge>
+                            {series?.rating_avg && (
+                              <div className="flex items-center space-x-1 bg-black/60 backdrop-blur-sm px-2 py-1 rounded-full">
+                                <Star className="w-3 h-3 text-golden fill-current" />
+                                <span className="text-xs text-white font-medium">{series?.rating_avg}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
 
-                <Button
-                              size="sm"
-                              variant="outline"
-                              className={`border-golden/30 transition ${
-                                series?.is_user_watched == 1 ? "bg-golden/10" : ""
-                              }`}
-                              onClick={(e) => handleWatchlistToggle(series, e)}
-                            >
-                              {series?.is_user_watched == 1 ? (
-                                <BookmarkCheck className="w-3 h-3 text-golden" />
-                              ) : (
-                                <BookmarkPlus className="w-3 h-3" />
-                              )}
-                            </Button>
+                        {/* Info */}
+                        <div className="flex-1 p-6">
+                          <div>
+                            <div>
+                              <div className="flex items-start justify-between mb-4">
+                                <div>
+                                  <h2 className="text-2xl font-bold text-foreground mb-2">{series?.title}</h2>
+                                  <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground mb-3">
+                                    {/* <Badge variant="secondary">{series?.state}</Badge> */}
+                                    <span>{series?.release_date}</span>
+                                    <span>•</span>
+                                    <span>{series?.genres}</span>
+                                    <span>•</span>
+                                    <span>{series?.language}</span>
+                                    <span>•</span>
+                                    <span>{series?.total_episode_count} Episodes</span>
+                                  </div>
+                                </div>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className={`border-golden/30 transition ${series?.is_user_watched == 1 ? "bg-golden/10" : ""
+                                    }`}
+                                  onClick={(e) => handleWatchlistToggle(series, e)}
+                                >
+                                  {series?.is_user_watched == 1 ? (
+                                    <BookmarkCheck className="w-3 h-3 text-golden" />
+                                  ) : (
+                                    <BookmarkPlus className="w-3 h-3" />
+                                  )}
+                                </Button>
+                              </div>
+                              <p className="text-muted-foreground mb-4 max-w-2xl">
+                                {series?.overview}
+                              </p>
+                            </div>
 
-                {/* <Button size="sm" variant="ghost" onClick={(e) => handleWatchlistToggle(series, e)}>
+
+
+                            {/* <Button size="sm" variant="ghost" onClick={(e) => handleWatchlistToggle(series, e)}>
                   {isInWatchlist(series.id) ? (
                     <BookmarkCheck className="w-5 h-5 text-golden" />
                   ) : (
                     <BookmarkPlus className="w-5 h-5" />
                   )}
                 </Button> */}
-              </div>
+                          </div>
 
-              {/* Action Buttons */}
-              <div className="flex gap-3 mb-4">
-                <Button 
-                  className="bg-golden text-black hover:bg-golden/90"
-                  onClick={() => handlePlayEpisode(series, series?.seasons?.[0]?.episodes?.[0])}
-                >
-                  <Play className="w-4 h-4 mr-2" />
-                  Watch Free Episode
-                </Button>
-
-                <Button 
-                  variant="outline"
-                  className="border-golden/30 text-golden hover:bg-golden/10"
-                  onClick={() => handleBuySeries(series)}
-                >
-                  Buy Full Series
-                </Button>
-
-                <Button 
-                  variant="outline"
-                  onClick={() => setExpandedSeries(isExpanded ? null : series.id)}
-                >
-                  {isExpanded ? 'Hide' : 'Show'} Episodes
-                  <ChevronRight className={`w-4 h-4 ml-2 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
-                </Button>
-              </div>
-
-              {/* Season + Episodes */}
-              {isExpanded && (
-                <div className="mt-6 space-y-6 max-h-96 overflow-y-auto">
-
-                  {series?.seasons?.map((season, sIndex) => (
-                    <div key={sIndex}>
-                      <h3 className="text-lg font-semibold text-golden mb-3">
-                        Season {sIndex + 1}   
-                      </h3> 
-
-                      <div className="space-y-2">
-                        {season?.episodes?.map((episode) => {
-                          const episodeProgress = getProgress(series.id, episode.id);
-
-                          return (
-                            <div 
-                              key={episode.id}
-                              className="flex items-center gap-4 p-3 bg-background/50 rounded-lg hover:bg-background/70 transition-colors cursor-pointer"
-                              onClick={() => handlePlayEpisode(series, episode)}
+                          {/* Action Buttons */}
+                          <div className="md:flex gap-3 mb-4">
+                            <Button
+                              className="mb-3 md:mb-0 bg-golden text-black hover:bg-golden/90"
+                              onClick={() => handlePlayEpisode(series, series?.seasons?.[0]?.episodes?.[0])}
                             >
-                              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-card-accent flex items-center justify-center">
-                                {episode.isFree ? (
-                                  <Play className="w-4 h-4 text-golden" />
-                                ) : (
-                                  <Lock className="w-4 h-4 text-muted-foreground" />
-                                )}
-                              </div>
+                              <Play className="w-4 h-4 mr-2" />
+                              Watch Free Episode
+                            </Button>
 
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-sm font-semibold text-foreground">
-                                    {episode.episodeNumber}. {episode.name}
-                                  </span>
-                                  {episode.isFree && (
-                                    <Badge className="bg-golden/20 text-golden text-xs">FREE</Badge>
-                                  )}
-                                </div>
+                            <Button
+                              variant="outline"
+                              className="mb-3 md:mb-0border-golden/30 text-golden hover:bg-golden/10"
+                              onClick={() => handleBuySeries(series)}
+                            >
+                              Buy Full Series
+                            </Button>
 
-                                {episodeProgress && (
-                                  <div className="mt-1 h-1 bg-card-accent rounded-full overflow-hidden">
-                                    <div 
-                                      className="h-full bg-golden"
-                                      style={{ width: `${episodeProgress.progress}%` }}
-                                    />
+                            <Button
+                              variant="outline"
+                              onClick={() => setExpandedSeries(isExpanded ? null : series.id)}
+                            >
+                              {isExpanded ? 'Hide' : 'Show'} Episodes
+                              <ChevronRight className={`w-4 h-4 ml-2 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
+                            </Button>
+                          </div>
+
+                          {/* Season + Episodes */}
+                          {isExpanded && (
+                            <div className="mt-6 space-y-6 max-h-96 overflow-y-auto">
+
+                              {series?.seasons?.map((season, sIndex) => (
+                                <div key={sIndex}>
+                                  <h3 className="text-lg font-semibold text-golden mb-3">
+                                    Season {sIndex + 1}
+                                  </h3>
+
+                                  <div className="space-y-2">
+                                    {season?.episodes?.map((episode) => {
+                                      const episodeProgress = getProgress(series.id, episode.id);
+
+                                      return (
+                                        <div
+                                          key={episode.id}
+                                          className="flex items-center gap-4 p-3 bg-background/50 rounded-lg hover:bg-background/70 transition-colors cursor-pointer"
+                                          onClick={() => handlePlayEpisode(series, episode)}
+                                        >
+                                          <div className="flex-shrink-0 w-8 h-8 rounded-full bg-card-accent flex items-center justify-center">
+                                            {episode.isFree ? (
+                                              <Play className="w-4 h-4 text-golden" />
+                                            ) : (
+                                              <Lock className="w-4 h-4 text-muted-foreground" />
+                                            )}
+                                          </div>
+
+                                          <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2">
+                                              <span className="text-sm font-semibold text-foreground">
+                                                {episode.episodeNumber}. {episode.name}
+                                              </span>
+                                              {episode.isFree && (
+                                                <Badge className="bg-golden/20 text-golden text-xs">FREE</Badge>
+                                              )}
+                                            </div>
+
+                                            {episodeProgress && (
+                                              <div className="mt-1 h-1 bg-card-accent rounded-full overflow-hidden">
+                                                <div
+                                                  className="h-full bg-golden"
+                                                  style={{ width: `${episodeProgress.progress}%` }}
+                                                />
+                                              </div>
+                                            )}
+                                          </div>
+
+                                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                            <Clock className="w-3 h-3" />
+                                            {episode.duration}
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
                                   </div>
-                                )}
-                              </div>
+                                </div>
+                              ))}
 
-                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                <Clock className="w-3 h-3" />
-                                {episode.duration}
-                              </div>
                             </div>
-                          );
-                        })}
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
-
-                </div>
-              )}
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  })}
-</div>
 
 
-            
+
           </div>
         </section>
 
         {/* Ticket Purchase Dialog */}
         {selectedSeries && (
-          <TicketPurchaseDialog 
+          <TicketPurchaseDialog
             open={isTicketDialogOpen}
             onOpenChange={setIsTicketDialogOpen}
             movie={{
@@ -623,10 +627,10 @@ const TVSeries = () => {
               language: selectedSeries?.language,
               state: selectedSeries?.state,
               tv_portrait_image: selectedSeries?.tv_portrait_image,
-              tv_banner:selectedSeries?.tv_banner,
+              tv_banner: selectedSeries?.tv_banner,
               tv_landscape_image: selectedSeries?.tv_landscape_image,
-              rating_avg:selectedSeries?.rating_avg,
-              runtime:selectedSeries?.runtime
+              rating_avg: selectedSeries?.rating_avg,
+              runtime: selectedSeries?.runtime
             }}
           />
         )}

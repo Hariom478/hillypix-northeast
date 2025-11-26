@@ -139,7 +139,7 @@ const CulturalLibrary = () => {
 
     if (!user) {
       toast({ title: "Login Required", description: "Please login first." });
-      navigate("/login");
+      // navigate("/login");
       return;
     }
 
