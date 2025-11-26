@@ -244,7 +244,7 @@ const VideoPlayerPage = () => {
           ref={videoRef}
           src={movie?.url}
           autoPlay
-          className="w-full max-h-screen bg-black"
+          className="w-full lg:max-h-[75vh] md:max-h-[60vh] max-h-[50vh] bg-black"
           controls={false}
           controlsList="nodownload"
           disablePictureInPicture
@@ -268,7 +268,7 @@ const VideoPlayerPage = () => {
         />
       </div>
 
-      <div className="flex justify-center items-center gap-6 py-3 bg-black/60">
+      <div className="flex justify-center items-center gap-6 lg:py-3 md:py-1 py-1 bg-black/60">
         <Button size="icon" onClick={() => skip(-10)} disabled={isRentExpired}>
           <SkipBack className="w-6 h-6" />
         </Button>
