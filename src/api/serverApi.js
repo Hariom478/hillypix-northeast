@@ -2,7 +2,7 @@ const serverApi = async (endpoint, method = "GET", data, token, config) => {
   try {
     // const fetchUrl = process.env.NEXT_PUBLIC_API_BASEPATH_V2 + endpoint;
 
-    const fetchUrl = 'https://stageconsole.hillypix.com/api' + endpoint;
+    const fetchUrl = endpoint;
 
     const fetchConfig = {
       method,

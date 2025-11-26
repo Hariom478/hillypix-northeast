@@ -126,8 +126,8 @@ const TicketPurchaseDialog = ({ open, onOpenChange, movie }: TicketPurchaseDialo
   
         // setNewLoading(true);
         const res = await fetch(
-          // `${process.env.NEXT_PUBLIC_API_BASEPATH_V2}/payrent-order`,
-          'https://stageconsole.hillypix.com/api/payrent-order',
+          `${import.meta.env.VITE_API_BASEPATH_V2}/payrent-order`,
+          // 'https://stageconsole.hillypix.com/api/payrent-order',
           {
             method: "POST",
             headers: {

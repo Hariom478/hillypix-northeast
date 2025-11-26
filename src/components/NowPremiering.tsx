@@ -72,7 +72,7 @@ const NowPremiering = () => {
       user_id: user_id,
     };
 
-    const res = await Api("/premier_week", "POST", body, undefined, { cache: "no-store" });
+    const res = await Api(`${import.meta.env.VITE_API_BASEPATH_V2}/premier_week`, "POST", body, undefined, { cache: "no-store" });
     const data = await res.json();
     console.log("Every Time Data Render ", data);
     return data;
