@@ -260,3 +260,19 @@ input.PhoneInputInput {
     background: linear-gradient(45deg, #00050d, #00050d);
     z-index: 3;
 }
+
+.contactbanner
+{
+  position: relative;
+}
+.contactbanner::before
+{
+      content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 1;
+}

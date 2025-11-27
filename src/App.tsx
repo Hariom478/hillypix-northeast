@@ -15,6 +15,14 @@ import AllHonorees from "./pages/AllHonorees";
 import AboutUs from "./pages/AboutUs";
 import VideoPlayerPage from "./pages/VideoPlayerPage";
 import DetailsPage from "./pages/Details";
+import RefundCancellation from "./pages/refundcancellation";
+import Faq from "./pages/Faq";
+import HelpCenter from "./pages/HelpCenter";
+import Termsofuse from "./pages/Termsofuse";
+import TermAndConditionPage from "./pages/term-and-condition";
+import HillypixObtain from "./pages/hillypix-obtain";
+import PrivacyPolicy from "./pages/Privacy-policy";
+import ContactUs from "./pages/ContactUs";
 import { AuthProvider } from "./context/AuthProvider";
 
 const queryClient = new QueryClient();
@@ -37,6 +45,14 @@ const App = () => (
           <Route path="/my-library" element={<MyLibrary />} />
           <Route path="/all-honorees" element={<AllHonorees />} />
           <Route path="/about" element={<AboutUs />} />
+          <Route path="/refund-cancellation" element={<RefundCancellation />} />
+          <Route path="/help-center" element={<HelpCenter />} />
+          <Route path="/terms-use" element={<Termsofuse />} />          
+          <Route path="/terms-and-conditions" element={<TermAndConditionPage />} />          
+          <Route path="/hillypix-obtain" element={<HillypixObtain />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/contact-us" element={<ContactUs />} />
+          <Route path="/faq" element={<Faq />} />
           <Route path="/watch" element={<VideoPlayerPage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

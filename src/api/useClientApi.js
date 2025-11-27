@@ -2,7 +2,8 @@ import React from "react";
 import Cookies from "js-cookie";
 import axios from "axios";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASEPATH_V2;
+// const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASEPATH_V2;
+const API_BASE_URL = import.meta.env.VITE_API_BASEPATH_V2;
 
 // Create an Axios instance with base configuration
 const axiosInstance = axios.create({

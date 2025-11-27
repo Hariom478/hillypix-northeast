@@ -57,6 +57,15 @@ const Footer = () => {
                 <AccordionContent>
                   <nav className="space-y-2 text-sm">
                     <a href="/about" className="block text-muted-foreground hover:text-golden theatre-transition">About Us</a>
+                    {/* <a href="/about" className="block text-muted-foreground hover:text-golden theatre-transition">About Us</a> */}
+                  <a href="/contact-us" className="block text-muted-foreground hover:text-golden theatre-transition">Contact Us</a>
+                  <a href="/faq" className="block text-muted-foreground hover:text-golden theatre-transition">Faq</a>
+                  <a href="/help-center" className="block text-muted-foreground hover:text-golden theatre-transition">Help Center</a>
+                  <a href="/refund-cancellation" className="block text-muted-foreground hover:text-golden theatre-transition">Refund & Cancellation Policy</a>
+                  <a href="/terms-use" className="block text-muted-foreground hover:text-golden theatre-transition">Terms of Use</a>
+                  <a href="/terms-and-conditions" className="block text-muted-foreground hover:text-golden theatre-transition">Terms and Conditions</a>
+                  <a href="/privacy-policy" className="block text-muted-foreground hover:text-golden theatre-transition">Privacy Policy</a>
+                  <a href="/hillypix-obtain" className="block text-muted-foreground hover:text-golden theatre-transition">Hillypix-Obtain</a>
                   </nav>
                 </AccordionContent>
               </AccordionItem>
@@ -69,7 +78,7 @@ const Footer = () => {
           </>
         ) : (
           <>
-            <div className="grid md:grid-cols-5 gap-8">
+            <div className="grid md:grid-cols-6 gap-8">
               {/* Brand */}
               <div className="col-span-2 md:col-span-2">
                 <img 
@@ -107,10 +116,29 @@ const Footer = () => {
               </div>
 
               {/* Support */}
-              <div>
+              <div className='col-span-2'>
                 <h4 className="font-spartan font-semibold text-foreground mb-4">Support</h4>
                 <nav className="space-y-2 text-sm">
-                  <a href="/about" className="block text-muted-foreground hover:text-golden theatre-transition">About Us</a>
+                  
+                  <div className='flex items-start gap-5'>
+                    <div className="space-y-2">
+                      <a href="/about" className="block text-muted-foreground hover:text-golden theatre-transition">About Us</a>
+                      <a href="/contact-us" className="block text-muted-foreground hover:text-golden theatre-transition">Contact Us</a>
+                      <a href="/faq" className="block text-muted-foreground hover:text-golden theatre-transition">FAQs</a>
+                      <a href="/help-center" className="block text-muted-foreground hover:text-golden theatre-transition">Help Center</a>
+                      <a href="/refund-cancellation" className="block text-muted-foreground hover:text-golden theatre-transition">Refund & Cancellation Policy</a>
+                      </div>  
+                    <div className="space-y-2">
+                      <a href="/terms-use" className="block text-muted-foreground hover:text-golden theatre-transition">Terms of Use</a>
+                      <a href="/terms-and-conditions" className="block text-muted-foreground hover:text-golden theatre-transition">Terms and Conditions</a>
+                      <a href="/privacy-policy" className="block text-muted-foreground hover:text-golden theatre-transition">Privacy Policy</a>
+                      <a href="/hillypix-obtain" className="block text-muted-foreground hover:text-golden theatre-transition">Hillypix-Obtain</a>
+                    </div>
+                  </div>
+
+
+                
+                  
                 </nav>
               </div>
             </div>

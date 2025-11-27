@@ -202,7 +202,7 @@ const NowPremiering = () => {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex gap-3 mt-4">
+              {/* <div className="flex gap-3 mt-4">
                 <Button onClick={() => handleBuyTicket(movie)} size={isMobile ? 'sm' : 'default'} className="flex-1 theatre-gradient text-white hover:scale-105 theatre-transition premiere-glow text-xs">
                   <Ticket className="w-3 h-3 mr-2" />
                   {isMobile ? 'Buy' : 'Buy Ticket'}
@@ -210,7 +210,7 @@ const NowPremiering = () => {
                 <Button onClick={() => handleWatchTrailer(movie)} variant="outline" size="icon" className="border-golden/50 text-golden hover:bg-golden/10 hover:scale-105 theatre-transition">
                   <Play className="w-3 h-3" />
                 </Button>
-              </div>
+              </div> */}
             </div>
           </CardContent>
         </Card>)}

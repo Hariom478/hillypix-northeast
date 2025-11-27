@@ -4,7 +4,11 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { parsePhoneNumberWithError } from "libphonenumber-js";
 import type { CountryCode } from "libphonenumber-js";
-import { isMobile as detectMobile, browserName as detectBrowser, osName as detectOS } from "react-device-detect";
+import {
+  isMobile as detectMobile,
+  browserName as detectBrowser,
+  osName as detectOS,
+} from "react-device-detect";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import {
@@ -21,7 +25,12 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Film, Star } from "lucide-react";
 import CountrySelect from "./CountrySelect";
-import { loginUser, registerUser, verifyLoginOtp, logoutDevice } from "@/lib/graphql";
+import {
+  loginUser,
+  registerUser,
+  verifyLoginOtp,
+  logoutDevice,
+} from "@/lib/graphql";
 import { saveServerAuth, mergeServerUser } from "@/lib/localAuth";
 
 interface AuthDialogProps {
@@ -41,7 +50,32 @@ const AuthDialog = ({ open, onOpenChange, onAuthSuccess }: AuthDialogProps) => {
     handleSubmit,
     reset,
     setValue,
-    formState: { errors },
+    formState: { errors, isSubmitting },
+  } = useForm<any>();
+
+  const {
+    register: register2,
+    handleSubmit: handleSubmit2,
+    reset: reset2,
+    setValue: setValue2,
+    formState: { errors: errors2, isSubmitting: isSubmitting2},
+  } = useForm<any>();
+
+   const {
+    register: register3,
+    handleSubmit: handleSubmit3,
+    reset: reset3,
+    setValue: setValue3,
+    formState: { errors: errors3, isSubmitting: isSubmitting3},
+  } = useForm<any>();
+
+
+   const {
+    register: register4,
+    handleSubmit: handleSubmit4,
+    reset: reset4,
+    setValue: setValue4,
+    formState: { errors: errors4, isSubmitting: isSubmitting4},
   } = useForm<any>();
 
   // normalize OTP error to avoid runtime crashes when errors.otp has unexpected shape
@@ -63,6 +97,7 @@ const AuthDialog = ({ open, onOpenChange, onAuthSuccess }: AuthDialogProps) => {
   })();
 
   const [isOtpSend, setIsOtpSend] = useState(false);
+  const [isOtpSend2, setIsOtpSend2] = useState(false);
   const [mobileNumber, setMobileNumber] = useState(""); // national number
   const [otpMessage, setOtpMessage] = useState("");
   const [resendOTPBody, setResendOTPBody] = useState<any>({});
@@ -78,7 +113,6 @@ const AuthDialog = ({ open, onOpenChange, onAuthSuccess }: AuthDialogProps) => {
   const [token, setToken] = useState<string | null>(null);
   const [pendingOtp, setPendingOtp] = useState<string | null>(null);
   const [isShowRestoreModal, setIsShowRestoreModal] = useState(false);
-  
 
   const splitName = (fullName: string) => {
     const parts = (fullName || "").trim().split(" ");
@@ -100,6 +134,9 @@ const AuthDialog = ({ open, onOpenChange, onAuthSuccess }: AuthDialogProps) => {
   // SIGNUP
   // ======================
   const handleSignup = async (data: any) => {
+    // e.preventDefault();
+    // alert("dsfdsfdfdsf");
+    // return false;
     try {
       setIsLoading(true);
       let phoneData;
@@ -137,10 +174,9 @@ const AuthDialog = ({ open, onOpenChange, onAuthSuccess }: AuthDialogProps) => {
       };
 
       const res = await registerUser(input);
-
-      if (res?.register?.status) {
+      if (res?.register?.status==true) {
         setMobileNumber(res.register.user?.mobile_number || phoneData.nationalNumber);
-        setIsOtpSend(true);
+        setIsOtpSend2(true);
         setResendOTPBody(body);
         setActiveTab("signup");
         setOtpMessage(`OTP sent to ${res.register.user?.mobile_number || phoneData.number}`);
@@ -152,7 +188,7 @@ const AuthDialog = ({ open, onOpenChange, onAuthSuccess }: AuthDialogProps) => {
       } else {
         toast({
           title: "Registration Failed",
-          description: res?.register?.message || "Try again.",
+          description: res?.register?.message?.error || "Try again.",
           variant: "destructive",
         });
       }
@@ -167,100 +203,101 @@ const AuthDialog = ({ open, onOpenChange, onAuthSuccess }: AuthDialogProps) => {
     }
   };
 
+  console.log('errors', errors);
+
   // ----------------------
   // HANDLE LOGIN (SEND OTP)
   // ----------------------
-// ----------------------
-// HANDLE LOGIN (SEND OTP)
-// ----------------------
-const handleLogin = async (data: any) => {
-  try {
-    setIsLoading(true);
+  // ----------------------
+  // HANDLE LOGIN (SEND OTP)
+  // ----------------------
+  const handleLogin = async (data: any) => {
+    try {
+      setIsLoading(true);
 
-    // VALIDATE MOBILE
-    if (!data.mobilenumber) {
+      // VALIDATE MOBILE
+      if (!data.mobilenumber) {
+        toast({
+          title: "Error",
+          description: "Mobile number is required.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // prepare request body
+      const input = {
+        mobilenumber: data.mobilenumber.toString(),
+        country_code: countryCode, // "+91"
+        device_type: 1, // required by API
+      };
+
+      const res = await loginUser(input);
+
+      // ===========================
+      // SUCCESS → SEND OTP
+      // ===========================
+      if (res?.login?.status === true) {
+        const user = res.login.user;
+
+        // Save mobile for OTP verification
+        setMobileNumber(user?.mobile_number || data.mobilenumber);
+
+        // Save resend OTP body (MUST contain country_code)
+        setResendOTPBody({
+          mobilenumber: user?.mobile_number || data.mobilenumber,
+          country_code: countryCode,
+          device_type: 1,
+        });
+
+        // UI update
+        setIsOtpSend(true);
+
+        toast({
+          title: "Success",
+          description: "OTP sent to your mobile.",
+        });
+
+        return;
+      }
+
+      // ===========================
+      // USER NOT REGISTERED
+      // ===========================
+      if (res?.login?.status === false && !res?.login?.user) {
+        toast({
+          title: "User Not Found",
+          description: "Please sign up first.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // ===========================
+      // OTHER FAILURE
+      // ===========================
+      toast({
+        title: "Login Failed",
+        description: res?.login?.message || "Failed to send OTP.",
+        variant: "destructive",
+      });
+    } catch (err: any) {
       toast({
         title: "Error",
-        description: "Mobile number is required.",
+        description: err.message || "Something went wrong.",
         variant: "destructive",
       });
-      return;
+    } finally {
+      setIsLoading(false);
     }
-
-    // prepare request body
-    const input = {
-      mobilenumber: data.mobilenumber.toString(),
-      country_code: countryCode,       // "+91"
-      device_type: 1,                  // required by API
-    };
-
-    const res = await loginUser(input);
-
-    // ===========================
-    // SUCCESS → SEND OTP
-    // ===========================
-    if (res?.login?.status === true) {
-      const user = res.login.user;
-
-      // Save mobile for OTP verification
-      setMobileNumber(user?.mobile_number || data.mobilenumber);
-
-      // Save resend OTP body (MUST contain country_code)
-      setResendOTPBody({
-        mobilenumber: user?.mobile_number || data.mobilenumber,
-        country_code: countryCode,
-        device_type: 1,
-      });
-
-      // UI update
-      setIsOtpSend(true);
-
-      toast({
-        title: "Success",
-        description: "OTP sent to your mobile.",
-      });
-
-      return;
-    }
-
-    // ===========================
-    // USER NOT REGISTERED
-    // ===========================
-    if (res?.login?.status === false && !res?.login?.user) {
-      toast({
-        title: "User Not Found",
-        description: "Please sign up first.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // ===========================
-    // OTHER FAILURE
-    // ===========================
-    toast({
-      title: "Login Failed",
-      description: res?.login?.message || "Failed to send OTP.",
-      variant: "destructive",
-    });
-
-  } catch (err: any) {
-    toast({
-      title: "Error",
-      description: err.message || "Something went wrong.",
-      variant: "destructive",
-    });
-  } finally {
-    setIsLoading(false);
-  }
-};
-
-
+  };
 
   // ======================
   // OTP VERIFICATION
   // ======================
   const verifyOtp = async (data: { otp: string }) => {
+
+    console.log("data data",data);
     try {
       if (!data?.otp) {
         toast({
@@ -270,7 +307,6 @@ const handleLogin = async (data: any) => {
         });
         return;
       }
-
       const input = {
         otp: data.otp,
         mobilenumber: mobileNumber,
@@ -281,7 +317,6 @@ const handleLogin = async (data: any) => {
       setIsLoading(true);
       const res = await verifyLoginOtp(input);
       if (res?.verifyloginotp?.status) {
-        
         const serverUser = res.verifyloginotp.data.UserDetails || {};
         const token = res.verifyloginotp.data?.token || null;
         try {
@@ -289,13 +324,15 @@ const handleLogin = async (data: any) => {
         } catch (e) {
           // best-effort fallback: store basic auth
           try {
-
             localStorage.setItem(
               "auth",
-              JSON.stringify({ token: token, user: serverUser, current_device_token: serverUser.current_device_token })
+              JSON.stringify({
+                token: token,
+                user: serverUser,
+                current_device_token: serverUser.current_device_token,
+              })
             );
             localStorage.setItem("hillypix-user", JSON.stringify(serverUser));
-
           } catch (e2) {
             // ignore
           }
@@ -308,19 +345,27 @@ const handleLogin = async (data: any) => {
         onAuthSuccess(merged);
 
         setTimeout(() => {
+          window.location.href="/";
           navigate("/");
         }, 500);
         onOpenChange(false);
-      } else if (res?.verifyloginotp?.status === false && res?.verifyloginotp?.show_logout_button === true) {
+      } else if (
+        res?.verifyloginotp?.status === false &&
+        res?.verifyloginotp?.show_logout_button === true
+      ) {
         // device limit reached — store token + pending otp and show device-limit modal
-        const fallbackToken = res?.verifyloginotp?.data?.token ?? res?.verifyloginotp?.token ?? null;
+        const fallbackToken =
+          res?.verifyloginotp?.data?.token ??
+          res?.verifyloginotp?.token ??
+          null;
         setToken(fallbackToken);
         setPendingOtp(data.otp ?? null);
         setShowDeviceLimitModal(true);
       } else {
         toast({
           title: "OTP Verification Failed",
-          description: res?.verifyloginotp?.message || "OTP verification failed!",
+          description:
+            res?.verifyloginotp?.message || "OTP verification failed!",
           variant: "destructive",
         });
       }
@@ -340,7 +385,11 @@ const handleLogin = async (data: any) => {
   // ======================
   const resendOTP = async () => {
     if (!resendOTPBody?.mobilenumber) {
-      toast({ title: "Error", description: "No mobile available to resend OTP.", variant: "destructive" });
+      toast({
+        title: "Error",
+        description: "No mobile available to resend OTP.",
+        variant: "destructive",
+      });
       return;
     }
     try {
@@ -348,7 +397,11 @@ const handleLogin = async (data: any) => {
       const res = await loginUser(resendOTPBody);
       if (res?.login?.status) {
         toast({ title: "OTP Resent", description: "Check your mobile again." });
-        setOtpMessage(`OTP re-sent to ${res.login?.user?.mobile_number || resendOTPBody.mobilenumber}`);
+        setOtpMessage(
+          `OTP re-sent to ${
+            res.login?.user?.mobile_number || resendOTPBody.mobilenumber
+          }`
+        );
         setIsOtpSend(true);
       } else {
         toast({
@@ -381,7 +434,11 @@ const handleLogin = async (data: any) => {
   // ----------------------
   const logoutAllDevices = async () => {
     if (!token) {
-      toast({ title: "Error", description: "Missing token.", variant: "destructive" });
+      toast({
+        title: "Error",
+        description: "Missing token.",
+        variant: "destructive",
+      });
       return;
     }
     try {
@@ -389,7 +446,10 @@ const handleLogin = async (data: any) => {
       // assuming logoutDevice accepts (body, token)
       const res = await logoutDevice({ logout_all: true }, token);
       if (res?.logoutDevice?.status === true) {
-        toast({ title: "Success", description: "Logged out from all devices!" });
+        toast({
+          title: "Success",
+          description: "Logged out from all devices!",
+        });
         setShowDeviceLimitModal(false);
 
         // retry verifying OTP with same pending OTP
@@ -406,14 +466,25 @@ const handleLogin = async (data: any) => {
             const serverUser = retry.verifyloginotp.data.UserDetails || {};
             const token = retry.verifyloginotp.data?.token || null;
             try {
-              saveServerAuth(serverUser, token, serverUser.current_device_token);
+              saveServerAuth(
+                serverUser,
+                token,
+                serverUser.current_device_token
+              );
             } catch (e) {
               try {
                 localStorage.setItem(
                   "auth",
-                  JSON.stringify({ token: token, user: serverUser, current_device_token: serverUser.current_device_token })
+                  JSON.stringify({
+                    token: token,
+                    user: serverUser,
+                    current_device_token: serverUser.current_device_token,
+                  })
                 );
-                localStorage.setItem("hillypix-user", JSON.stringify(serverUser));
+                localStorage.setItem(
+                  "hillypix-user",
+                  JSON.stringify(serverUser)
+                );
               } catch (e2) {
                 // ignore
               }
@@ -421,28 +492,41 @@ const handleLogin = async (data: any) => {
 
             const merged = mergeServerUser(serverUser);
 
-            toast({ title: "Success", description: "OTP verified successfully!" });
+            toast({
+              title: "Success",
+              description: "OTP verified successfully!",
+            });
             onAuthSuccess(merged);
             setTimeout(() => navigate("/"), 400);
             onOpenChange(false);
           } else {
             toast({
               title: "Error",
-              description: retry?.verifyloginotp?.message || "Failed after logout-all attempt",
+              description:
+                retry?.verifyloginotp?.message ||
+                "Failed after logout-all attempt",
               variant: "destructive",
             });
           }
         }
       } else {
-        toast({ title: "Error", description: res?.logoutDevice?.message || "Failed to log out all devices.", variant: "destructive" });
+        toast({
+          title: "Error",
+          description:
+            res?.logoutDevice?.message || "Failed to log out all devices.",
+          variant: "destructive",
+        });
       }
     } catch (err: any) {
-      toast({ title: "Error", description: err?.message || "Something went wrong.", variant: "destructive" });
+      toast({
+        title: "Error",
+        description: err?.message || "Something went wrong.",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
   };
-
 
   const handleRestore = async () => {
     // If you have a `restoreUser` GraphQL call, call it here.
@@ -452,10 +536,17 @@ const handleLogin = async (data: any) => {
       // example:
       // const res = await restoreUser({ mobile_number: mobileNumber, country_code: ??? });
       // if success => toast + setIsOtpSend(true)
-      toast({ title: "Info", description: "Restore flow not implemented - wire to your API." });
+      toast({
+        title: "Info",
+        description: "Restore flow not implemented - wire to your API.",
+      });
       setIsShowRestoreModal(false);
     } catch (err: any) {
-      toast({ title: "Error", description: err?.message || "Failed to restore.", variant: "destructive" });
+      toast({
+        title: "Error",
+        description: err?.message || "Failed to restore.",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -470,14 +561,23 @@ const handleLogin = async (data: any) => {
               <Film className="w-5 h-5 text-golden" />
             </div>
             <div>
-              <DialogTitle className="text-2xl font-bold">Join HillyPix</DialogTitle>
-              <Badge className="bg-golden/20 text-golden text-xs mt-1">🎭 HillyWood Experience</Badge>
+              <DialogTitle className="text-2xl font-bold">
+                Join HillyPix
+              </DialogTitle>
+              <Badge className="bg-golden/20 text-golden text-xs mt-1">
+                🎭 HillyWood Experience
+              </Badge>
             </div>
           </div>
-          <DialogDescription>Access your cultural cinema library and exclusive premieres</DialogDescription>
+          <DialogDescription>
+            Access your cultural cinema library and exclusive premieres
+          </DialogDescription>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "login" | "signup")}>
+        <Tabs
+          value={activeTab}
+          onValueChange={(v) => setActiveTab(v as "login" | "signup")}
+        >
           <TabsList className="grid grid-cols-2">
             <TabsTrigger value="login">Sign In</TabsTrigger>
             <TabsTrigger value="signup">Sign Up</TabsTrigger>
@@ -486,30 +586,43 @@ const handleLogin = async (data: any) => {
           <TabsContent value="login">
             {isOtpSend ? (
               <div className="bg-white p-6 rounded-lg shadow-md w-full max-w-md mx-auto">
-                <form onSubmit={handleSubmit(verifyOtp)} className="space-y-4">
+                <form onSubmit={handleSubmit4(verifyOtp)} className="space-y-4">
                   <p className="text-sm text-gray-700 flex items-center">
                     <span className="flex-1">{otpMessage}</span>
-                    <button type="button" onClick={editNumber} className="ml-2 text-sm text-indigo-600">
+                    <button
+                      type="button"
+                      onClick={editNumber}
+                      className="ml-2 text-sm text-indigo-600"
+                    >
                       Edit
                     </button>
                   </p>
 
                   <Input
-                    {...register("otp", {
+                    {...register4("otp", {
                       required: "OTP is required",
                       minLength: { value: 6, message: "OTP must be 6 digits" },
                       maxLength: { value: 6, message: "OTP must be 6 digits" },
-                      pattern: { value: /^\d+$/, message: "OTP must contain only numbers" },
+                      pattern: {
+                        value: /^\d+$/,
+                        message: "OTP must contain only numbers",
+                      },
                     })}
                     placeholder="Enter OTP"
                     maxLength={6}
                     inputMode="numeric"
                     autoFocus
                   />
-                  {otpError && <p className="text-sm text-red-600">{otpError}</p>}
+                  {/* {otpError && (
+                    <p className="text-sm text-red-600">{otpError}</p>
+                  )} */}
 
                   <div className="flex items-center justify-between">
-                    <button type="button" onClick={resendOTP} className="text-sm text-indigo-600">
+                    <button
+                      type="button"
+                      onClick={resendOTP}
+                      className="text-sm text-indigo-600"
+                    >
                       Resend OTP
                     </button>
                     <Button type="submit" className="ml-2" disabled={isLoading}>
@@ -534,46 +647,53 @@ const handleLogin = async (data: any) => {
               // </form>
 
               <form onSubmit={handleSubmit(handleLogin)} className="space-y-4">
-              <Label>Mobile</Label>
+                <Label>Mobile</Label>
 
-              <div className="flex space-x-2">
-                <div className="w-36">
-                  <CountrySelect 
-                    value={countryCode} 
-                    onChange={(val) => setCountryCode(val)} 
-                    onCountryChange={(iso) => setCountryISO(iso as any)} 
+                <div className="flex space-x-2">
+                  <div className="w-36">
+                    <CountrySelect
+                      value={countryCode}
+                      onChange={(val) => setCountryCode(val)}
+                      onCountryChange={(iso) => setCountryISO(iso as any)}
+                    />
+                  </div>
+
+                  <Input
+                    className="flex-1"
+                    {...register("mobilenumber", {
+                      required: "Mobile number is required",
+                      pattern: {
+                        value: /^[0-9]{10}$/,
+                        message: "Mobile number must be exactly 10 digits",
+                      },
+                    })}
+                    maxLength={10} // prevents typing more than 10
+                    placeholder="Enter mobile number"
                   />
                 </div>
 
-                <Input
-                  className="flex-1"
-                  {...register("mobilenumber", {
-                    required: "Mobile number is required",
-                    pattern: {
-                      value: /^[0-9]{10}$/,
-                      message: "Mobile number must be exactly 10 digits"
-                    }
-                  })}
-                  maxLength={10} // prevents typing more than 10
-                  placeholder="Enter mobile number"
-                />
-              </div>
-              
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Sending OTP..." : "Sign In"}
-              </Button>
-            </form>
-
-
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? "Sending OTP..." : "Sign In"}
+                </Button>
+              </form>
             )}
           </TabsContent>
 
           <TabsContent value="signup">
-            {isOtpSend && activeTab === "signup" ? (
+            {isOtpSend2 && activeTab === "signup" ? (
               <div className="bg-white p-6 rounded-lg shadow-md w-full max-w-md mx-auto">
-                <form onSubmit={handleSubmit(verifyOtp)} className="space-y-4">
+                <form onSubmit={handleSubmit3(verifyOtp)} className="space-y-4">
                   <p className="text-sm text-gray-700">{otpMessage}</p>
-                  <Input {...register("otp", { required: true, minLength: 6, maxLength: 6 })} placeholder="Enter OTP" maxLength={6} />
+                  <Input
+                    {...register3("otp", {
+                      required: true,
+                      minLength: 6,
+                      maxLength: 6,
+                    })}
+                    placeholder="Enter OTP"
+                    maxLength={6}
+                    autoFocus
+                  />
                   <div className="flex gap-2">
                     <Button type="button" onClick={resendOTP} variant="outline">
                       Resend OTP
@@ -585,18 +705,70 @@ const handleLogin = async (data: any) => {
                 </form>
               </div>
             ) : (
-              <form onSubmit={handleSubmit(handleSignup)} className="space-y-4">
-                <Label>Full Name</Label>
-                <Input {...register("fullName")} placeholder="Full Name" />
-                <Label>Email</Label>
-                <Input {...register("email")} type="email" placeholder="Enter Email" />
-                <Label>Mobile</Label>
-                <div className="flex space-x-2">
-                  <CountrySelect value={countryCode} onChange={(val) => setCountryCode(val)} onCountryChange={(iso) => setCountryISO(iso as any)} />
-                  <Input className="flex-1" {...register("mobile")} placeholder="Enter Mobile Number" />
+              <form onSubmit={handleSubmit2(handleSignup)} className="space-y-4">
+                {/* Full Name */}
+                <div>
+                  <Label>Full Name</Label>
+                  <Input
+                    className="flex-1"
+                    placeholder="Enter Full Name"
+                    {...register2("fullName", {
+                      required: "Full name is required",
+                    })}
+                  />
+                  {!!errors2.fullName?.message && (
+                      <p className="text-red-500 text-sm">{errors2.fullName.message}</p>
+                  )}
                 </div>
-                <Button type="submit" className="w-full">
-                  Create Account
+
+                {/* Email */}
+                <div>
+                  <Label>Email</Label>
+                  <Input
+                    className="flex-1"
+                    placeholder="Enter Email"
+                    {...register2("email", { required: "Email is required" })}
+                  />
+                  {errors2.email && (
+                    <p className="text-red-500 text-sm">
+                      {errors2?.email?.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* Mobile */}
+                <div>
+                  <Label>Mobile</Label>
+                  <div className="flex space-x-2">
+                    <CountrySelect
+                      value={countryCode}
+                      onChange={(val) => setCountryCode(val)}
+                      onCountryChange={(iso) => setCountryISO(iso)}
+                    />
+
+                    <Input
+                      className="flex-1"
+                      placeholder="Enter mobile number"
+                      {...register2("mobile", {
+                        required: "Mobile number is required",
+                      })}
+                       maxLength={10}
+                    />
+                  </div>
+                  {errors2.mobile && (
+                    <p className="text-red-500 text-sm">
+                      {errors2.mobile.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* Submit button */}
+                <Button
+                  type="submit"
+                  // disabled={isSubmitting}
+                  className="w-full"
+                >
+                  {isSubmitting ? "Please wait..." : "Create Account"}
                 </Button>
               </form>
             )}
@@ -606,22 +778,41 @@ const handleLogin = async (data: any) => {
         <div className="mt-6 p-4 bg-background/20 rounded-lg">
           <div className="flex items-center space-x-2 mb-2">
             <Star className="w-4 h-4 text-golden" />
-            <span className="text-sm font-medium text-golden">HillyWood Promise</span>
+            <span className="text-sm font-medium text-golden">
+              HillyWood Promise
+            </span>
           </div>
-          <p className="text-xs italic">“Every story preserves our heritage…”</p>
+          <p className="text-xs italic">
+            “Every story preserves our heritage…”
+          </p>
         </div>
       </DialogContent>
 
       {/* Device limit modal */}
-      <Dialog open={showDeviceLimitModal} onOpenChange={(v) => setShowDeviceLimitModal(v)}>
+      <Dialog
+        open={showDeviceLimitModal}
+        onOpenChange={(v) => setShowDeviceLimitModal(v)}
+      >
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Device Limit Reached</DialogTitle>
-            <DialogDescription>You have reached the maximum number of allowed devices. Logout from all other devices to continue.</DialogDescription>
+            <DialogDescription>
+              You have reached the maximum number of allowed devices. Logout
+              from all other devices to continue.
+            </DialogDescription>
           </DialogHeader>
           <div className="flex justify-end gap-3 mt-4">
-            <Button variant="secondary" onClick={() => setShowDeviceLimitModal(false)}>Cancel</Button>
-            <Button variant="destructive" onClick={logoutAllDevices} disabled={isLoading}>
+            <Button
+              variant="secondary"
+              onClick={() => setShowDeviceLimitModal(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={logoutAllDevices}
+              disabled={isLoading}
+            >
               {isLoading ? "Please wait..." : "Logout All"}
             </Button>
           </div>
@@ -629,14 +820,24 @@ const handleLogin = async (data: any) => {
       </Dialog>
 
       {/* Restore account modal */}
-      <Dialog open={isShowRestoreModal} onOpenChange={(v) => setIsShowRestoreModal(v)}>
+      <Dialog
+        open={isShowRestoreModal}
+        onOpenChange={(v) => setIsShowRestoreModal(v)}
+      >
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Restore Account</DialogTitle>
-            <DialogDescription>Your account appears to be inactive. Would you like to restore it?</DialogDescription>
+            <DialogDescription>
+              Your account appears to be inactive. Would you like to restore it?
+            </DialogDescription>
           </DialogHeader>
           <div className="flex justify-start gap-3 pt-3">
-            <Button variant="secondary" onClick={() => setIsShowRestoreModal(false)}>No</Button>
+            <Button
+              variant="secondary"
+              onClick={() => setIsShowRestoreModal(false)}
+            >
+              No
+            </Button>
             <Button onClick={handleRestore}>Yes</Button>
           </div>
         </DialogContent>
@@ -649,4 +850,3 @@ export default AuthDialog;
 function setShowSignup(arg0: boolean) {
   throw new Error("Function not implemented.");
 }
-
